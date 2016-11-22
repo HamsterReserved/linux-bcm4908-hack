@@ -36,5 +36,5 @@ int bcm_phy_config_intr(struct phy_device *phydev);
 
 int bcm_phy_enable_apd(struct phy_device *phydev, bool dll_pwr_down);
 
-int bcm_phy_enable_eee(struct phy_device *phydev);
+int bcm_phy_set_eee(struct phy_device *phydev, bool enable);
 #endif /* _LINUX_BCM_PHY_LIB_H */
