@@ -166,8 +166,9 @@ struct net_bridge_fdb_entry
 	struct rcu_head			rcu;
 };
 
-#define MDB_PG_FLAGS_PERMANENT	BIT(0)
-#define MDB_PG_FLAGS_OFFLOAD	BIT(1)
+#define MDB_PG_FLAGS_PERMANENT		BIT(0)
+#define MDB_PG_FLAGS_OFFLOAD		BIT(1)
+#define MDB_PG_FLAGS_MCAST_TO_UCAST	BIT(2)
 
 struct net_bridge_port_group {
 	struct net_bridge_port		*port;
@@ -177,6 +178,7 @@ struct net_bridge_port_group {
 	struct timer_list		timer;
 	struct br_ip			addr;
 	unsigned char			flags;
+	unsigned char			eth_addr[ETH_ALEN];
 };
 
 struct net_bridge_mdb_entry
@@ -591,7 +593,7 @@ void br_multicast_free_pg(struct rcu_head *head);
 struct net_bridge_port_group *
 br_multicast_new_port_group(struct net_bridge_port *port, struct br_ip *group,
 			    struct net_bridge_port_group __rcu *next,
-			    unsigned char flags);
+			    unsigned char flags, const unsigned char *src);
 void br_mdb_init(void);
 void br_mdb_uninit(void);
 void br_mdb_notify(struct net_device *dev, struct net_bridge_port *port,
