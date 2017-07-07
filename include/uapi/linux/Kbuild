@@ -399,6 +399,7 @@ header-y += stddef.h
 header-y += string.h
 header-y += suspend_ioctls.h
 header-y += swab.h
+header-y += switch.h
 header-y += synclink.h
 header-y += sync_file.h
 header-y += sysctl.h
