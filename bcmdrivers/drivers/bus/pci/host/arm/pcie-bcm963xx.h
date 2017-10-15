@@ -1,4 +1,3 @@
-#if defined(CONFIG_BCM_KF_ARM_BCM963XX)
 /*
 <:copyright-BRCM:2015:DUAL/GPL:standard
 
@@ -288,4 +287,3 @@ struct bcm963xx_pcie_hcd
 #endif
 
 #endif /* __PCIE_BCM963XX_H */
-#endif

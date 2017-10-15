@@ -1,4 +1,3 @@
-#if defined(CONFIG_BCM_KF_ARM_BCM963XX)
 /*
 <:copyright-BRCM:2015:DUAL/GPL:standard
 
@@ -1972,4 +1971,3 @@ static int __init bcm963xx_pcie_plt_init(void)
 	return ret;
 }
 subsys_initcall(bcm963xx_pcie_plt_init);
-#endif /* CONFIG_BCM_KF_ARM_BCM963XX */
