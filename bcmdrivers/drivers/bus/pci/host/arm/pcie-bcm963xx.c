@@ -174,7 +174,7 @@ static void bcm963xx_pcie_unmap_res(struct bcm963xx_pcie_hcd *pdrv);
 static int bcm963xx_pcie_parse_dt(struct bcm963xx_pcie_hcd *pdrv);
 static int bcm963xx_pcie_init_res(struct bcm963xx_pcie_hcd *pdrv);
 
-static int __init bcm963xx_pcie_probe(struct platform_device *pdev);
+static int bcm963xx_pcie_probe(struct platform_device *pdev);
 static int __exit bcm963xx_pcie_remove(struct platform_device *pdev);
 static int __init bcm963xx_pcie_init(void);
 static void __exit bcm963xx_pcie_exit(void);
@@ -491,7 +491,6 @@ static int bcm963xx_pcie_msi_map(struct irq_domain *domain,
 
 	irq_set_chip_and_handler(irq, &msi->irq_ops, handle_simple_irq);
 	irq_set_chip_data(irq, msi);
-	set_irq_flags(irq, IRQF_VALID);
 
 	HCD_FN_EXT();
 
@@ -671,8 +670,6 @@ static int bcm963xx_pcie_msi_enable(struct bcm963xx_pcie_hcd *pdrv)
 	reg_data = hcd_readl(pdrv->base, CPU_INTR1_INTR_MASK_CLEAR_OFFSET);
 	reg_data |= CPU_INTR1_PCIE_INTR_CPU_INTR;
 	hcd_writel(reg_data, pdrv->base, CPU_INTR1_INTR_MASK_CLEAR_OFFSET);
-
-	set_irq_flags(pdrv->resources.irq, IRQF_VALID);
 
 	/* Set the flag to specify MSI is enabled */
 	msi->enabled = true;
@@ -1649,7 +1646,7 @@ static int bcm963xx_pcie_init_res(struct bcm963xx_pcie_hcd *pdrv)
   *
   *  Return: 0 on success, -ve on failure
   */
-static int __init bcm963xx_pcie_probe(struct platform_device *pdev)
+static int bcm963xx_pcie_probe(struct platform_device *pdev)
 {
 	struct bcm963xx_pcie_hcd *pdrv = NULL;
 #if 0
@@ -1886,7 +1883,7 @@ static int __init bcm963xx_pcie_init(void)
 
 	HCD_FN_ENT();
 
-	printk("PCIe HCD (impl%d)\r\n",CONFIG_BCM_PCIE_HCD_IMPL);
+	printk("PCIe HCD (impl1)\r\n");
 
 	ret = platform_driver_register(&bcm963xx_pcie_driver);
 

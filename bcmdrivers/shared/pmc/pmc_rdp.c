@@ -50,7 +50,7 @@ static int pmc_rdp_start_pll_with_clk(uint32_t clk)
 	uint32_t error;
 
 	if (WriteBPCMRegister(PMB_ADDR_RDPPLL, PLLBPCMRegOffset(resets), 0))
-		PRINTK("failed to configure PMB RDPPLL at word offset of 0x%02x\n", PLLBPCMRegOffset(resets));
+		PRINTK("failed to configure PMB RDPPLL at word offset of 0x%02lx\n", PLLBPCMRegOffset(resets));
 
 #if 0	// FIXME! after we know how to pass the RDP clk info, also clean the hardcode value?
 	if (clk == 550MHz) {
@@ -90,11 +90,11 @@ static int pmc_rdp_start_pll_with_clk(uint32_t clk)
 			(uint32*)&bpcmResReg);
 	if (error)
 		PRINTK("Failed to ReadBPCMRegister RDPPLL block at word offset "
-				"of 0x%02x\n", PLLBPCMRegOffset(resets));
+				"of 0x%02lx\n", PLLBPCMRegOffset(resets));
 
 	if (WriteBPCMRegister(PMB_ADDR_RDPPLL, PLLBPCMRegOffset(resets),
 				(bpcmResReg | (1 << 0))))
-		PRINTK("failed to configure PMB RDPPLL of 0x%02x\n",
+		PRINTK("failed to configure PMB RDPPLL of 0x%02lx\n",
 				PLLBPCMRegOffset(resets));
 
 	do {
@@ -102,18 +102,18 @@ static int pmc_rdp_start_pll_with_clk(uint32_t clk)
 				PLLBPCMRegOffset(stat), (uint32*)&bpcmResReg);
 		if (error)
 			PRINTK("Failed to ReadBPCMRegister RDPPLL block "
-					"0x%02x\n", PLLBPCMRegOffset(stat));
+					"0x%02lx\n", PLLBPCMRegOffset(stat));
 	} while (!(bpcmResReg & 0x80000000));
 
 	error = ReadBPCMRegister(PMB_ADDR_RDPPLL, PLLBPCMRegOffset(resets),
 			(uint32*)&bpcmResReg);
 	if (error)
 		PRINTK("Failed to ReadBPCMRegister RDPPLL block at word offset "
-				"of 0x%02x\n", PLLBPCMRegOffset(resets));
+				"of 0x%02lx\n", PLLBPCMRegOffset(resets));
 
 	if (WriteBPCMRegister(PMB_ADDR_RDPPLL, PLLBPCMRegOffset(resets),
 				(bpcmResReg | (1 << 1))))
-		PRINTK("failed to configure PMB RDPPLL of 0x%02x\n",
+		PRINTK("failed to configure PMB RDPPLL of 0x%02lx\n",
 				PLLBPCMRegOffset(resets));
 	return error;
 }
@@ -180,7 +180,7 @@ int pmc_rdp_init(void)
 	ret = WriteBPCMRegister(PMB_ADDR_RDP, BPCMRegOffset(sr_control), 0);
 	if (ret)
 		PRINTK("%s:%d:failed to configure PMB RDP at word offset of "
-				"0x%02x\n", __func__, __LINE__,
+				"0x%02lx\n", __func__, __LINE__,
 				BPCMRegOffset(sr_control));
 
 	ret = pmc_rdp_power_down();
@@ -198,7 +198,7 @@ int pmc_rdp_init(void)
 			0xffffffff);
 	if (ret)
 		PRINTK("%s:%d:failed to configure PMB RDP at word offset of "
-				"0x%02x\n", __func__, __LINE__,
+				"0x%02lx\n", __func__, __LINE__,
 				BPCMRegOffset(sr_control));
 
 	return ret;
@@ -212,7 +212,7 @@ int pmc_rdp_shut_down(void)
 	ret = WriteBPCMRegister(PMB_ADDR_RDP, BPCMRegOffset(sr_control), 0);
 	if (ret)
 		PRINTK("%s:%d:failed to configure PMB RDP at word offset of "
-				"0x%02x\n", __func__, __LINE__,
+				"0x%02lx\n", __func__, __LINE__,
 				BPCMRegOffset(sr_control));
 	return ret;
 }
