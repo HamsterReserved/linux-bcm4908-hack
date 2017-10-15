@@ -85,7 +85,7 @@ Boston, MA 02111-1307, USA.
 #include <shared_utils.h>
 #include <bcm_pinmux.h>
 #include <bcmpci.h>
-#include <linux/bcm_log.h>
+//#include <linux/bcm_log.h>
 #include <bcmSpiRes.h>
 //extern unsigned int flash_get_reserved_bytes_at_end(const FLASH_ADDR_INFO *fInfo);
 #include <pushbutton.h>
@@ -744,7 +744,6 @@ static int __init brcm_board_init( void )
     unsigned short rstToDflt2_irq;
     int ext_irq_idx;
     int ext_irq2_idx;
-    bcmLogSpiCallbacks_t loggingCallbacks;
 
     alloc_chrdev_region(&brcmboard_devId, 0, 2, "brcmboard");
     
@@ -938,16 +937,6 @@ static int __init brcm_board_init( void )
     registerBtns();
 
     add_proc_files();
-
-#if defined(CONFIG_BCM_6802_MoCA)
-    board_mocaInit(mocaChipNum);
-    loggingCallbacks.kerSysSlaveRead   = kerSysBcmSpiSlaveRead;
-    loggingCallbacks.kerSysSlaveWrite  = kerSysBcmSpiSlaveWrite;
-    loggingCallbacks.bpGet6829PortInfo = NULL;
-#endif
-    loggingCallbacks.reserveSlave      = BcmSpiReserveSlave;
-    loggingCallbacks.syncTrans         = BcmSpiSyncTrans;
-    bcmLog_registerSpiCallbacks(loggingCallbacks);
 
     return ret;
 
