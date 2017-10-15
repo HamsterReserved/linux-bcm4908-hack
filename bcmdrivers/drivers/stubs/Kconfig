@@ -1,0 +1,5 @@
+config BCM_FUNC_STUBS
+	bool "Stubs for Broadcom board APIs and utilities"
+	help
+		Stubs of most common APIs to get chip IDs etc,
+		so the huge board API module can be dropped.
