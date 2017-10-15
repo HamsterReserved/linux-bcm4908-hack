@@ -1,7 +1,8 @@
 /*
- * B53 platform data
- *
- * Copyright (C) 2013 Jonas Gorski <jogo@openwrt.org>
+ * Copyright (c) 2008 Atheros Communications Inc.
+ * Copyright (c) 2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (c) 2009 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (c) 2010 Daniel Golle <daniel.golle@gmail.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,21 +17,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __B53_H
-#define __B53_H
+#ifndef _LINUX_ATH5K_PLATFORM_H
+#define _LINUX_ATH5K_PLATFORM_H
 
-#include <linux/kernel.h>
+#define ATH5K_PLAT_EEP_MAX_WORDS	2048
 
-struct b53_platform_data {
-	u32 chip_id;
-	u16 enabled_ports;
-
-	/* allow to specify an ethX alias */
-	const char *alias;
-
-	/* only used by MMAP'd driver */
-	unsigned big_endian:1;
-	void __iomem *regs;
+struct ath5k_platform_data {
+	u16 *eeprom_data;
+	u8 *macaddr;
 };
 
-#endif
+#endif /* _LINUX_ATH5K_PLATFORM_H */
