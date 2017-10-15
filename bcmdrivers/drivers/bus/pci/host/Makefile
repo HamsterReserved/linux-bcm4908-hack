@@ -3,10 +3,10 @@
 #  for ARM and MIPS based platforms with 4.1 kernel onwards
 #
 
-PCIE_HCD_PATH=$(BRCMDRIVERS_DIR)/opensource/bus/pci/host/impl1
+PCIE_HCD_PATH=bcmdrivers/bus/pci/host
 EXTRA_CFLAGS += -I$(PCIE_HCD_PATH)/common
-EXTRA_CFLAGS += -I. -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMBOARDPARMS_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/pmc
+EXTRA_CFLAGS += -I. -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/boardparms/bcm963xx
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc
 
 #
 # ARM platforms

@@ -31,7 +31,7 @@
 
 # remove optimization for debug 
 #EXTRA_CFLAGS += -O0 -g
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/pmc -I$(INC_BRCMSHARED_PUB_PATH)/rdp
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc -Ibcmdrivers/shared/include/rdp
 obj-y	 := pmc_drv.o       \
 			pmc_pcie.o		\
 			pmc_sysfs.o		\

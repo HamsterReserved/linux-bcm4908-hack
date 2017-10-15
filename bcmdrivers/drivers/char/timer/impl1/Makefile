@@ -4,7 +4,7 @@
 
 obj-$(CONFIG_BCM_EXT_TIMER) += bcm963xx_timer.o
 
-EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD)
+EXTRA_CFLAGS += -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx
 EXTRA_CFLAGS += -Werror -Wfatal-errors
 
 -include $(TOPDIR)/Rules.make

@@ -33,7 +33,7 @@ endif
 endif
 
 EXTRA_CFLAGS += -I$(SHARED_DIR)/opensource
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include
 
 ifneq ($(strip $(CONFIG_BCM_GMAC)),)
 ifneq ($(strip $(CONFIG_BCM_ENET_4908_GMAC)),y)
@@ -59,11 +59,11 @@ ifneq ($(strip $(CONFIG_BCM_ENET)),)
 obj-$(CONFIG_BCM_ENET) = bcm_enet.o
 endif
 ifneq (,$(filter $(BRCM_CHIP),6838 6848))
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/drv/phys -I$(INC_BRCMSHARED_PUB_PATH)/drv/phys/egphy -I$(INC_BRCMSHARED_PUB_PATH)/drv/phys/extphy
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/drv
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/drv/phys -Ibcmdrivers/shared/include/drv/phys/egphy -Ibcmdrivers/shared/include/drv/phys/extphy
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/drv
 else ifeq ($(findstring _$(strip $(BRCM_CHIP))_,_63138_63148_4908_),_$(strip $(BRCM_CHIP))_)
 EXTRA_CFLAGS += -DSTAR_FIGHTER2
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/drv -I$(INC_BRCMSHARED_PUB_PATH)/pmc
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/drv -Ibcmdrivers/shared/include/pmc
 endif
 
 ifeq ($(findstring _$(strip $(BRCM_CHIP))_,_63138_4908_),_$(strip $(BRCM_CHIP))_)
@@ -130,7 +130,7 @@ EXTRA_CFLAGS += -DSEPARATE_MAC_FOR_WAN_INTERFACES
 ifneq (,$(filter $(BRCM_CHIP),6838 6848))
 ifneq ($(strip $(CONFIG_BCM_PTP_1588)),)
 bcm_enet-objs += bcmenet_ptp_1588.o
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/pmc
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc
 EXTRA_CFLAGS += -I$(BRCMDRIVERS_DIR)/broadcom/char/time_sync/impl$(CONFIG_BCM_TIME_SYNC_IMPL)
 endif
 endif
@@ -158,11 +158,11 @@ endif
 
 
 EXTRA_CFLAGS += -I$(obj) -I$(obj)/../shared
-EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PRIV_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(INC_BRCMBOARDPARMS_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(BRCMDRIVERS_DIR)/opensource/include/$(BRCM_BOARD)
+EXTRA_CFLAGS += -Ibcmdrivers/drivers/include/bcm963xx
+EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PRIV_PATH)/bcm963xx
+EXTRA_CFLAGS += -I$(INC_BRCMBOARDPARMS_PATH)/bcm963xx
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/bcm963xx
+EXTRA_CFLAGS += -I$(BRCMDRIVERS_DIR)/opensource/include/bcm963xx
 ifeq ($(CONFIG_BCM_XTMRT_IMPL),1)
 EXTRA_CFLAGS += -I$(BRCMDRIVERS_DIR)/opensource/net/xtmrt/impl3
 else

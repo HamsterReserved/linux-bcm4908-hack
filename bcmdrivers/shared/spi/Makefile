@@ -87,4 +87,4 @@ endif
 obj-y +=               \
     bcmSpiRes.o 
 
-EXTRA_CFLAGS += -DCONFIG_BCM9$(BRCM_CHIP) -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/pmc
+EXTRA_CFLAGS += -DCONFIG_BCM9$(BRCM_CHIP) -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/pmc

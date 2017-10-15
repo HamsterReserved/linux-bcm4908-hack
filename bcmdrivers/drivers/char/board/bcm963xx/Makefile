@@ -54,9 +54,9 @@ endif
 endif
 endif
  
-EXTRA_CFLAGS += -I. -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMSHARED_PUB_PATH)/../flash -I$(BUILD_DIR)/router/bcm_util
+EXTRA_CFLAGS += -I. -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/../flash -I$(BUILD_DIR)/router/bcm_util
 ifneq ($(findstring _$(strip $(BRCM_CHIP))_,,_63138_63148_6838_63381_4908_),)
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/pmc
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc
 endif
 EXTRA_CFLAGS += -Werror -Wfatal-errors
 EXTRA_CFLAGS += -g

@@ -16,7 +16,7 @@ endif
 
 obj-$(CONFIG_BCM_MCAST) += bcmmcast.o
 
-EXTRA_CFLAGS += -I. -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
+EXTRA_CFLAGS += -I. -Ibcmdrivers/drivers/include/bcm963xx
 EXTRA_CFLAGS += -Werror -Wfatal-errors
 
 clean:

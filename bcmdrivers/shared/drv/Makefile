@@ -79,16 +79,16 @@ ifeq ($(strip ${BRCM_CHIP}),47189)
     EXTRA_CFLAGS += -DMAC_GMAC
     EXTRA_CFLAGS += -DPHY_EXT_SWITCH
     EXTRA_CFLAGS += -DPHY_EXT1
-    EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/bcm963xx
+    EXTRA_CFLAGS += -Ibcmdrivers/shared/include/bcm963xx
 endif
 obj-y +=  $(DRV_OBJS)
 
 EXTRA_CFLAGS += -I$(INC_BDMF_PATH)/framework
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/drv/phys -I$(INC_BRCMSHARED_PUB_PATH)/drv/mdio
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/drv/unimac  -I$(INC_BRCMSHARED_PUB_PATH)/pmc 
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/drv/phys -Ibcmdrivers/shared/include/drv/mdio
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/drv/unimac  -Ibcmdrivers/shared/include/pmc 
 EXTRA_CFLAGS += -I$(SHARED_DIR)/opensource/drv/lport -I$(SHARED_DIR)/opensource/drv/lport/ag
-EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
-EXTRA_CFLAGS += -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD)
+EXTRA_CFLAGS += -Ibcmdrivers/drivers/include/bcm963xx
+EXTRA_CFLAGS += -Ibcmdrivers/shared/include/bcm963xx
 EXTRA_CFLAGS += $(INC_RDP_FLAGS)
 
 
