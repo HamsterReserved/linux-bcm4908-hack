@@ -149,6 +149,10 @@ config MDIO_XGENE
 
 comment "Switch configuration API + drivers"
 
+config MDIO_BOARDINFO
+	bool
+	default y
+
 config SWCONFIG
 	tristate "Switch configuration API"
 	---help---

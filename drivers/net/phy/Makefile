@@ -3,6 +3,8 @@
 libphy-y			:= phy.o phy_device.o mdio_bus.o mdio_device.o
 libphy-$(CONFIG_SWPHY)		+= swphy.o
 
+obj-$(CONFIG_MDIO_BOARDINFO)	+= mdio-boardinfo.o
+
 obj-$(CONFIG_PHYLIB)		+= libphy.o
 
 obj-$(CONFIG_SWCONFIG)		+= swconfig.o
