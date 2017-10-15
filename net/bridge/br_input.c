@@ -233,7 +233,8 @@ static int br_handle_local_finish(struct net *net, struct sock *sk, struct sk_bu
 {
 	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
 
-	__br_handle_local_finish(skb);
+	if (p->state != BR_STATE_DISABLED)
+		__br_handle_local_finish(skb);
 
 	BR_INPUT_SKB_CB(skb)->brdev = p->br->dev;
 	br_pass_frame_up(skb);
@@ -316,6 +317,15 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 
 forward:
 	switch (p->state) {
+	case BR_STATE_DISABLED:
+		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+			skb->pkt_type = PACKET_HOST;
+
+		NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING,
+			dev_net(skb->dev), NULL, skb, skb->dev, NULL,
+			br_handle_local_finish);
+		break;
+
 	case BR_STATE_FORWARDING:
 		rhook = rcu_dereference(br_should_route_hook);
 		if (rhook) {
