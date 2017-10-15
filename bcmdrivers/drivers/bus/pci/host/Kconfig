@@ -12,11 +12,6 @@ config BCM_PCIE_HCD
 	depends on BCM_PCI
 	default  y
 
-config BCM_PCIE_HCD_IMPL
-	int "PCIe host controller driver implementation selection"
-	depends on BCM_PCIE_HCD
-	default 1
-
 config BCM_PCIE_SSC
 	bool "Enable PCIe Spread Spectrum Clocking"
 	default  n

@@ -1,0 +1,6 @@
+config BCM_PMC
+	bool "PMC"
+	depends on BCM96838 || BCM963138 || BCM963148 || BCM963381 || BCM96848 || BCM94908 || BCM96858
+	help
+		Power management controller
+

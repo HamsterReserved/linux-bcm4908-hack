@@ -1,5 +1,7 @@
-menu Broadcom drivers
+menu "Broadcom drivers"
 
 source "bcmdrivers/drivers/bus/pci/host/Kconfig"
+
+source "bcmdrivers/shared/pmc/Kconfig"
 
 endmenu

@@ -34,8 +34,8 @@
 EXTRA_CFLAGS += -Ibcmdrivers/drivers/include/bcm963xx
 EXTRA_CFLAGS += -Ibcmdrivers/shared/include/bcm963xx
 EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc
-obj-y	 := pmc_drv.o
-obj-$(CONFIG_BCM94908) += clk_rst.o pmc_pcie.o pmc_switch.o pmc_sysfs.o pmc_fpm.o pmc_rdp.o pmc_usb.o pmc_sata.o pmc_pcm.o
+obj-$(CONFIG_BCM_PMC) += pmc_drv.o
+obj-$(CONFIG_BCM_PMC) += clk_rst.o pmc_pcie.o pmc_switch.o pmc_sysfs.o pmc_fpm.o pmc_rdp.o pmc_usb.o pmc_sata.o pmc_pcm.o
 
 -include $(TOPDIR)/Rules.make
 
