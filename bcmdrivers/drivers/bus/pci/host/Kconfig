@@ -1,0 +1,23 @@
+config BCM_PCI
+	bool "Support for PCI"
+	select PCI
+	select PCI_DOMAINS
+	select PCI_QUIRKS
+
+# NOTE: the select PCI_DOMAINS line will cause problems with old kernel, but removing it
+#	will cause PCI_DOMAINS to be removed from the .config file for some unknown reason...
+
+config BCM_PCIE_HCD
+	bool "PCIe host controller driver from bcmdriver"
+	depends on BCM_PCI
+	default  y
+
+config BCM_PCIE_HCD_IMPL
+	int "PCIe host controller driver implementation selection"
+	depends on BCM_PCIE_HCD
+	default 1
+
+config BCM_PCIE_SSC
+	bool "Enable PCIe Spread Spectrum Clocking"
+	default  n
+	depends on BCM_PCI

@@ -1,0 +1,11 @@
+choice
+	prompt "Broadcom Commengine board type"
+	default BCM94908
+	help
+	  Select different Broadcom ADSL board
+
+config BCM94908
+	bool "4908 Wireless Router board"
+	depends on ARM64
+
+endchoice

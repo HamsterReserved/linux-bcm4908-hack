@@ -1,0 +1,5 @@
+menu Broadcom drivers
+
+source "bcmdrivers/drivers/bus/pci/host/Kconfig"
+
+endmenu
