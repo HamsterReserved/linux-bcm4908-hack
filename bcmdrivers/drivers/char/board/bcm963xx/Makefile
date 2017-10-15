@@ -2,26 +2,26 @@
 #
 
 
-obj-y := board.o bcm63xx_flash.o bcm63xx_led.o bcm63xx_gpio.o pushbutton.o
+obj-$(CONFIG_BCM_BOARD_API) := board.o bcm63xx_flash.o bcm63xx_led.o bcm63xx_gpio.o pushbutton.o
 
 ifneq ($(strip $(CONFIG_COMPAT)),)
-    obj-y += compat_board.o
+    obj-$(CONFIG_BCM_BOARD_API) += compat_board.o
 endif
 
 ifneq ($(strip $(BUILD_IEEE1905)),)
-obj-y += ieee1905_module.o    
+obj-$(CONFIG_BCM_BOARD_API) += ieee1905_module.o    
 endif
 
 ifneq ($(strip $(BUILD_6802_MOCA)),)
-    obj-y += bbsi/bbsi.o
-    obj-y += bbsi/bbsiExecSeq.o
-    obj-y += moca/6802/init.o
+    obj-$(CONFIG_BCM_BOARD_API) += bbsi/bbsi.o
+    obj-$(CONFIG_BCM_BOARD_API) += bbsi/bbsiExecSeq.o
+    obj-$(CONFIG_BCM_BOARD_API) += moca/6802/init.o
 else
-    obj-y += spidevices.o
+    obj-$(CONFIG_BCM_BOARD_API) += spidevices.o
 endif
 
 ifneq ($(strip $(CONFIG_BCM_CPLD1)),)
-    obj-y += bcmcpld1.o
+    obj-$(CONFIG_BCM_BOARD_API) += bcmcpld1.o
 	EXTRA_CFLAGS += -DCONFIG_BCM_CPLD1
 endif
 
@@ -30,12 +30,12 @@ ifneq ($(strip $(CONFIG_MTD_NAND)),)
 endif
 
 ifneq ($(strip $(CONFIG_BCM_PLC_BOOT)),)
-    obj-y += homeplugd_module.o
+    obj-$(CONFIG_BCM_BOARD_API) += homeplugd_module.o
 endif
 
 ifneq ($(strip $(subst ", ,$(BUILD_BRCM_XDSL_DISTPOINT))),)
-    obj-y += dsldsp_operation.o
-    obj-y += xdsl_distpoint.o
+    obj-$(CONFIG_BCM_BOARD_API) += dsldsp_operation.o
+    obj-$(CONFIG_BCM_BOARD_API) += xdsl_distpoint.o
 	EXTRA_CFLAGS += -DBRCM_XDSL_DISTPOINT
 endif
 ifneq ($(strip $(BUILD_BRCM_FTTDP)),)
@@ -54,11 +54,9 @@ endif
 endif
 endif
  
-EXTRA_CFLAGS += -I. -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/../flash -I$(BUILD_DIR)/router/bcm_util
-ifneq ($(findstring _$(strip $(BRCM_CHIP))_,,_63138_63148_6838_63381_4908_),)
+EXTRA_CFLAGS += -I. -Ibcmdrivers/drivers/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/shared/include/../flash -Ibcmdrivers/shared/misc
 EXTRA_CFLAGS += -Ibcmdrivers/shared/include/pmc
-endif
-EXTRA_CFLAGS += -Werror -Wfatal-errors
+#EXTRA_CFLAGS += -Werror -Wfatal-errors
 EXTRA_CFLAGS += -g
 
 ifneq ($(strip $(CONFIG_BCM_WLAN)),)

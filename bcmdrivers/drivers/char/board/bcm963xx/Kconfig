@@ -1,0 +1,4 @@
+config BCM_BOARD_API
+	bool "Broadcom board APIs"
+	help
+		Common APIs to get chip IDs etc.
