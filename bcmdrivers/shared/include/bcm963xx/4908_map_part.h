@@ -306,9 +306,9 @@ enum
 #define PCM_DMA_BASE          BCM_IO_MAP(PCM_IDX, PCM_PHYS_BASE, PCM_DMA_OFFSET)
 
 
-#ifdef __BOARD_DRV_AARCH64__
+#ifdef CONFIG_ARM64
 // add here any legacy driver's (driver that have no device tree node) IO memory to be mapped
-BCM_IO_BLOCKS bcm_io_blocks[] = 
+static BCM_IO_BLOCKS bcm_io_blocks[] = 
 {
     {PERF_IDX, PERF_SIZE, PERF_PHYS_BASE},
     {PERF1_IDX, PERF1_SIZE, PERF1_PHYS_BASE},
@@ -328,7 +328,7 @@ BCM_IO_BLOCKS bcm_io_blocks[] =
     {SPU_IDX, SPU_SIZE, SPU_PHYS_BASE},
     {PDC_IDX, PDC_SIZE, PDC_PHYS_BASE},
 };
-unsigned long bcm_io_block_address[LAST_IDX];
+static unsigned long bcm_io_block_address[LAST_IDX];
 #else
 extern BCM_IO_BLOCKS bcm_io_blocks[];
 extern unsigned long bcm_io_block_address[];
