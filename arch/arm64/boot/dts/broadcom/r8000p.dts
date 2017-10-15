@@ -1,0 +1,141 @@
+#include "bcm4908.dtsi"
+
+/ {
+	model = "Netgear R8000P";
+	compatible = "netgear,r8000p";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		bootargs = "earlyprintk console=ttyS0,115200n8 loglevel=8";
+		linux,stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x20000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		power-white {
+			label = "brcm49xx:white:power";
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		power-amber {
+			label = "brcm49xx:amber:power";
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		wps {
+			label = "brcm49xx:white:wps-btn";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		2ghz {
+			label = "brcm49xx:white:2ghz";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		5ghz-1 {
+			label = "brcm49xx:white:5ghz-1";
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		5ghz-2 {
+			label = "brcm49xx:white:5ghz-2";
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		usb2 {
+			label = "brcm49xx:white:usb2";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		usb3 {
+			label = "brcm49xx:white:usb3";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		wireless {
+			label = "brcm49xx:white:wifi-btn";
+			gpios = <&gpio0 56 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		wps {
+			label = "WPS";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio0 54 GPIO_ACTIVE_LOW>;
+		};
+
+		rfkill {
+			label = "WiFi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio0 55 GPIO_ACTIVE_LOW>;
+		};
+
+		restart {
+			label = "Reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio0 53 GPIO_ACTIVE_LOW>;
+		};
+
+		led-switch {
+			label = "LED Switch";
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			linux,input_type = <EV_SW>;
+			gpios = <&gpio0 52 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&nand {
+	nandcs@0 {
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <1024>;
+
+		nvram@0 {
+			reg = <0x0 0x100000>;
+		};
+
+		bootfs@100000 {
+			reg = <0x100000 0x4a0000>;
+			read-only;
+		};
+
+		firmware@5a0000 {
+			reg = <0x5a0000 0x3f60000>;
+		};
+
+		/* misc1 ~ misc7 */
+		netgear@4500000 {
+			reg = <0x4500000 0x1200000>;
+			read-only;
+		};
+
+		data@5700000 {
+			reg = <0x5700000 0x2800000>;
+		};
+	};
+};

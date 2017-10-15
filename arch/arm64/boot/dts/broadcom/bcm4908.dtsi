@@ -1,0 +1,178 @@
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+#define GIC_DIST_BASE	0x81001000
+#define GIC_CPUI_BASE	0x81002000
+
+#define TIMER_HYP_PPI			10
+#define TIMER_VIRT_PPI			11
+#define TIMER_PHYS_SECURE_PPI		13
+#define TIMER_PHYS_NONSECURE_PPI	14
+
+#define DMA_SPI				84
+#define PMU_CORE0_SPI			9
+#define PMU_CORE1_SPI			10
+#define PMU_CORE2_SPI			11
+#define PMU_CORE3_SPI			12
+#define UART_SPI			32
+#define NAND_SPI			37
+#define SDIO_EMMC_SPI			85
+#define SPU_GMAC_SPI			90
+
+/dts-v1/;
+
+/memreserve/ 0x00000000 0x00010000;
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		B53_0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0 0x0>;
+			next-level-cache = <&L2_0>;
+		};
+		B53_1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0 0x1>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0xfff8>;
+			next-level-cache = <&L2_0>;
+		};
+		B53_2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0 0x2>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0xfff8>;
+			next-level-cache = <&L2_0>;
+		};
+		B53_3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0 0x3>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0xfff8>;
+			next-level-cache = <&L2_0>;
+		};
+
+		L2_0: l2-cache0 {
+			compatible = "cache";
+		};
+	};
+
+	/* Legacy UBUS base */
+	ubus@ff800000 {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges = <0x0 0x0 0x0 0xff800000 0x0 0x8000>;
+
+		nand: nand@ff801800 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,nand-bcm63138", "brcm,brcmnand-v7.0", "brcm,brcmnand";
+			reg = <0x0 0x1800 0x0 0x600>, <0x0 0x2000 0x0 0x10>;
+			reg-names = "nand", "nand-int-base";
+			interrupts = <GIC_SPI NAND_SPI IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "nand";
+			status = "okay";
+
+			nandcs@0 {
+				compatible = "brcm,nandcs";
+				reg = <0>;
+				nand-on-flash-bbt;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				nand-ecc-strength = <4>;
+				nand-ecc-step-size = <1024>;
+			};
+		};
+
+		watchdog@ff800428 {
+			compatible = "brcm,bcm96xxx-wdt";
+			reg = <0x0 0x428 0x0 0x10>;
+			timeout-sec = <80>;
+		};
+
+		gpio0: gpio-controller@ff800500 {
+			compatible = "brcm,bcm6345-gpio";
+			reg-names = "dirout", "dat";
+			reg = <0x0 0x500 0 8>, <0x0 0x528 0 8>; /* 40 bytes actually */
+
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		uart0: serial@ff800640 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x0 0x640 0x0 0x18>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI UART_SPI IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&periph_clk>;
+		};
+	};
+
+	pdc0: spu-pdc@0x8001c000 {
+		compatible = "brcm,pdc";
+		reg = <0x00000000 0x8001c000 0x00000000 0x448>;
+		interrupts = <GIC_SPI SPU_GMAC_SPI IRQ_TYPE_LEVEL_HIGH>;
+	};
+	
+	therm0: brcm-therm {
+		compatible = "brcm,therm";
+	};
+
+	gic: interrupt-controller@81000000 {
+		compatible = "arm,cortex-a15-gic", "arm,cortex-a9-gic";
+		#interrupt-cells = <3>;
+		#address-cells = <0>;
+		interrupt-controller;
+		reg = <0x0 GIC_DIST_BASE 0 0x1000>,
+		      <0x0 GIC_CPUI_BASE 0 0x2000>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI TIMER_PHYS_SECURE_PPI    (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI TIMER_PHYS_NONSECURE_PPI (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI TIMER_VIRT_PPI           (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI TIMER_HYP_PPI            (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	pmu {
+		compatible = "arm,armv8-pmuv3";
+		interrupts = <GIC_SPI PMU_CORE0_SPI IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI PMU_CORE1_SPI IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI PMU_CORE2_SPI IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI PMU_CORE3_SPI IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-affinity = <&B53_0>,
+				     <&B53_1>,
+				     <&B53_2>,
+				     <&B53_3>;
+	};
+
+	brcm-legacy {
+		compatible = "brcm,brcm-legacy";
+	};
+
+	clocks {
+		periph_clk: periph_clk@0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <50000000>;
+		};
+	};
+};
+
+
+
