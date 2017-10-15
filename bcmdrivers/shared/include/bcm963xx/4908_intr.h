@@ -184,9 +184,9 @@ extern "C" {
 #define INTERRUPT_PCM_DMA_IRQ             (bcm_legacy_irq_map[INTERRUPT_PCM_DMA_IRQ0 - SPI_TABLE_OFFSET])
 #define INTERRUPT_ID_NAND_FLASH           (bcm_legacy_irq_map[INTERRUPT_NAND_FLASH_IRQ - SPI_TABLE_OFFSET])
 
-#ifdef CONFIG_ARM64
+#ifdef __BOARD_DRV_AARCH64__
 // add here any legacy driver's (driver that have no device tree node) interrupt to be mapped
-static unsigned int bcm_phys_irqs_to_map[] =
+unsigned int bcm_phys_irqs_to_map[] =
 {
     INTERRUPT_DYING_GASP_IRQ,
     INTERRUPT_PER_UARTINT0,
@@ -226,7 +226,7 @@ static unsigned int bcm_phys_irqs_to_map[] =
     INTERRUPT_PER_EXT_5,
     INTERRUPT_NAND_FLASH_IRQ
 };
-static unsigned int bcm_legacy_irq_map[256];
+unsigned int bcm_legacy_irq_map[256];
 #else
 extern unsigned int bcm_phys_irqs_to_map[];
 extern unsigned int bcm_legacy_irq_map[];
