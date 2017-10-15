@@ -1001,6 +1001,9 @@ void phy_detach(struct phy_device *phydev)
 	struct mii_bus *bus;
 	int i;
 
+	if (phydev->drv && phydev->drv->detach)
+		phydev->drv->detach(phydev);
+
 	phydev->attached_dev->phydev = NULL;
 	phydev->attached_dev = NULL;
 	phy_suspend(phydev);
