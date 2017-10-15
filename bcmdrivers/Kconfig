@@ -2,6 +2,8 @@ menu "Broadcom drivers"
 
 source "bcmdrivers/drivers/stubs/Kconfig"
 
+source "bcmdrivers/drivers/plat-bcm/Kconfig"
+
 source "bcmdrivers/drivers/bus/pci/host/Kconfig"
 
 source "bcmdrivers/drivers/char/board/bcm963xx/Kconfig"

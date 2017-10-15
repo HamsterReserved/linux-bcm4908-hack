@@ -1,0 +1,4 @@
+config BCM_MAP_LEGACY
+	bool "Legacy IO / IRQ mapper"
+	help
+		Support legacy drivers without DT support.
