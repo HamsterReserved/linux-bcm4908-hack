@@ -791,6 +791,17 @@ run_parsers_by_type(struct mtd_part *slave, enum mtd_parser_type type)
 	return nr_parts;
 }
 
+static inline unsigned long
+mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
+{
+	unsigned long mask = mtd->erasesize - 1;
+
+	len += offset & mask;
+	len = (len + mask) & ~mask;
+	len -= offset & mask;
+	return len;
+}
+
 #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
 #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
 #else
@@ -1145,6 +1156,24 @@ int mtd_is_partition(const struct mtd_info *mtd)
 	return ispart;
 }
 EXPORT_SYMBOL_GPL(mtd_is_partition);
+
+struct mtd_info *mtdpart_get_master(const struct mtd_info *mtd)
+{
+	if (!mtd_is_partition(mtd))
+		return (struct mtd_info *)mtd;
+
+	return mtd_to_part(mtd)->parent;
+}
+EXPORT_SYMBOL_GPL(mtdpart_get_master);
+
+uint64_t mtdpart_get_offset(const struct mtd_info *mtd)
+{
+	if (!mtd_is_partition(mtd))
+		return 0;
+
+	return mtd_to_part(mtd)->offset;
+}
+EXPORT_SYMBOL_GPL(mtdpart_get_offset);
 
 /* Returns the size of the entire flash chip */
 uint64_t mtd_get_device_size(const struct mtd_info *mtd)
