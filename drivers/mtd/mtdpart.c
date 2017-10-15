@@ -1036,6 +1036,62 @@ void mtd_part_parser_cleanup(struct mtd_partitions *parts)
 	}
 }
 
+static struct mtd_part_parser *
+get_partition_parser_by_type(enum mtd_parser_type type,
+			     struct mtd_part_parser *start)
+{
+	struct mtd_part_parser *p, *ret = NULL;
+
+	spin_lock(&part_parser_lock);
+
+	p = list_prepare_entry(start, &part_parsers, list);
+	if (start)
+		mtd_part_parser_put(start);
+
+	list_for_each_entry_continue(p, &part_parsers, list) {
+		if (p->type == type && try_module_get(p->owner)) {
+			ret = p;
+			break;
+		}
+	}
+
+	spin_unlock(&part_parser_lock);
+
+	return ret;
+}
+
+int parse_mtd_partitions_by_type(struct mtd_info *master,
+				 enum mtd_parser_type type,
+				 const struct mtd_partition **pparts,
+				 struct mtd_part_parser_data *data)
+{
+	struct mtd_part_parser *prev = NULL;
+	int ret = 0;
+
+	while (1) {
+		struct mtd_part_parser *parser;
+
+		parser = get_partition_parser_by_type(type, prev);
+		if (!parser)
+			break;
+
+		ret = (*parser->parse_fn)(master, pparts, data);
+
+		if (ret > 0) {
+			mtd_part_parser_put(parser);
+			printk(KERN_NOTICE
+			       "%d %s partitions found on MTD device %s\n",
+			       ret, parser->name, master->name);
+			break;
+		}
+
+		prev = parser;
+	}
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(parse_mtd_partitions_by_type);
+
 int mtd_is_partition(const struct mtd_info *mtd)
 {
 	struct mtd_part *part;
