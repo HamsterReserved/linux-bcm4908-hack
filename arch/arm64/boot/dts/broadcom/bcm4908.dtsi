@@ -161,6 +161,23 @@
 				     <&B53_3>;
 	};
 
+	soc: soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0 0 0xffffffff>;
+
+		dma0: dma@ff859000 {
+			compatible = "arm,pl081", "arm,primecell";
+			reg = <0xff859000 0x1000>;
+			arm,primecell-periphid = <0x00041081>;
+			interrupts = <GIC_SPI DMA_SPI IRQ_TYPE_LEVEL_HIGH>;
+			#dma-cells = <2>;
+			clocks = <&periph_clk>;
+			clock-names = "apb_pclk";
+		};
+	};
+
 	brcm-legacy {
 		compatible = "brcm,brcm-legacy";
 	};
