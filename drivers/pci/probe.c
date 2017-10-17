@@ -1769,6 +1769,9 @@ static void pci_dma_configure(struct pci_dev *dev)
 		else
 			arch_setup_dma_ops(&dev->dev, 0, 0, NULL,
 					   attr == DEV_DMA_COHERENT);
+	} else {
+		/* HACK: Force setup for platforms with incomplete DT and no ACPI */
+		arch_setup_dma_ops(&dev->dev, 0, 0, NULL, 0);
 	}
 
 	pci_put_host_bridge_device(bridge);
