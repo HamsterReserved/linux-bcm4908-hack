@@ -1757,10 +1757,10 @@ static int bcm963xx_pcie_probe(struct platform_device *pdev)
 	         * - assign resources, irq
 	         * - add connected devices
 	         */
-	    bus = pci_scan_root_bus(&pdev->dev, BCM963XX_ROOT_BUSNUM,
+	    bus = pci_create_root_bus(&pdev->dev, BCM963XX_ROOT_BUSNUM,
 	        &bcm963xx_pcie_ops, pdrv, &res);
 	    if (!bus) {
-	        HCD_ERROR("core [%d] failed to setup hw: %d\r\n", core, err);
+	        HCD_ERROR("core [%d] failed to create root bus: %d\r\n", core, err);
 	        err =  -ENXIO;
 	        goto error;
 	    }
@@ -1779,6 +1779,7 @@ static int bcm963xx_pcie_probe(struct platform_device *pdev)
 	        bus->msi = (struct msi_controller*)pdrv->msi;
 	    }
 
+	    pci_scan_child_bus(bus);
 	    pci_assign_unassigned_bus_resources(bus);
 
 	    if (!HCD_USE_DT_ENTRY(core)) {
