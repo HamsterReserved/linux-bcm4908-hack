@@ -829,6 +829,7 @@ static bp_pinmux_defs_t *g_pinmux_defs_tables[] = { g_pinmux_defs_0, g_pinmux_de
 #endif
 
 #if defined(_BCM94908_) || defined(CONFIG_BCM94908)
+
 static bp_pinmux_fn_defs_t g_pinmux_fn_defs[] = {
   { BP_PINMUX_FNTYPE_xMII | 1, BP_PINMUX_VAL_DUMMY }, // Dummy entry for internal interface
   { BP_PINMUX_FNTYPE_xMII | 0, BP_PINMUX_VAL_DUMMY }, // Dummy entry for port 0
@@ -885,7 +886,65 @@ static bp_pinmux_fn_defs_t g_pinmux_fn_defs[] = {
   { BP_PINMUX_FNTYPE_HS_SPI, 56 | BP_PINMUX_VAL_0 },
   { BP_PINMUX_FNTYPE_HS_SPI, 23 | BP_PINMUX_VAL_2 },
 };
-
+#if 1 /* R8000P BRCM PATCH */
+static bp_pinmux_defs_t g_pinmux_defs_0[] = {
+  { bp_usSpeedLed1000, 0, 0, 0 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // SPD0/port 0 is led0  pinmux 4
+  { bp_usSpeedLed100, 0, 1, 1 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // SPD1/port 0 is led1  pinmux 4
+  { bp_usSpeedLed1000, 1, 2, 2 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed100, 1, 3, 3 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed1000, 2, 4, 4 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed100, 2, 5, 5 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed1000, 3, 6, 6 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed100, 3, 7, 7 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, 
+  { bp_usSpeedLed100, 3, 22, 22 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // Port 3 on Runner is the WAN port
+  { bp_usSpeedLed1000, 3, 23, 23 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // DONT confuse runner port 3 (WAN) with Switch port 0 (LAN)
+  { bp_usLinkLed, 4, 20, 20|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED },
+  { bp_usLinkLed, 4, 30, 30|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED },
+  { bp_usLinkLed, 3, 21, 21|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Port 3 on Runner is the WAN port
+  { bp_usLinkLed, 3, 31, 31|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Port 3 on Runner is the WAN port
+  { bp_usGpioLedAggregateLnk, -1, 12, 12|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Aggregate link LED
+  { bp_usGpioLedAggregateAct, -1, 13, 13|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Aggregate activity LED
+  { bp_usGpioLedAggregateLnk, -1, 24, 24|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Aggregate link LED
+  { bp_usGpioLedAggregateAct, -1, 25, 25|BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, //Aggregate activity LED
+  { bp_usMiiMdc,  -1, 48, 48 | BP_PINMUX_VAL_0},
+  { bp_usMiiMdio, -1, 49, 49 | BP_PINMUX_VAL_0},
+  { bp_usGpioLedPwmReserved, -1, 14, 14 | BP_PINMUX_VAL_3 | BP_PINMUX_PWMLED }, 
+  { bp_usGpioLedPwmReserved, -1, 15, 15 | BP_PINMUX_VAL_3 | BP_PINMUX_PWMLED }, 
+  { bp_ReservedAnyGpio, -1, -1,  BP_PINMUX_VAL_4 }, // ALL SW GPIOs use pinmux 4
+  { bp_ReservedAnyLed, -1, -1,  BP_PINMUX_VAL_3 }, // ALL SW LEDs use pinmux 3 
+  { bp_usGpioUart2Cts, -1, 10, 10 | BP_PINMUX_VAL_0},
+  { bp_usGpioUart2Rts, -1, 11, 11 | BP_PINMUX_VAL_0},
+  { bp_usGpioUart2Sdin, -1, 12, 12 | BP_PINMUX_VAL_0},
+  { bp_usGpioUart2Sdout, -1, 13, 13 | BP_PINMUX_VAL_0},
+  { bp_usUsbPwrFlt0, -1, 63, 63 | BP_PINMUX_VAL_0 },
+  { bp_usUsbPwrOn0, -1,  64, 64 | BP_PINMUX_VAL_0 },
+  { bp_usUsbPwrFlt1, -1, 66, 66 | BP_PINMUX_VAL_0 },
+  { bp_usUsbPwrOn1, -1,  67, 67 | BP_PINMUX_VAL_0 },
+  { bp_usGpioI2cSda, -1, 18, 18 | BP_PINMUX_VAL_0 },
+  { bp_usGpioI2cScl, -1, 19, 19 | BP_PINMUX_VAL_0 },
+  { bp_usGpioI2cSda, -1, 22, 22 | BP_PINMUX_VAL_0 },
+  { bp_usGpioI2cScl, -1, 23, 23 | BP_PINMUX_VAL_0 },
+  { bp_usSpiSlaveSelectNum, 2, 23, 23 | BP_PINMUX_VAL_2},
+  { bp_usSpiSlaveSelectNum, 3, 22, 22 | BP_PINMUX_VAL_2},
+  { bp_usSpiSlaveSelectNum, 4, 21, 21 | BP_PINMUX_VAL_2},
+  { bp_usSpiSlaveSelectNum, 5, 20, 20 | BP_PINMUX_VAL_2},
+  { bp_usGpioReserved, -1, 8, 8| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 9, 9| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 10, 10| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 12, 12| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 13, 13| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 14, 14| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 15, 15| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 16, 16| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 17, 17| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 18, 18| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 23, 23| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 54, 54| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 56, 56| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_usGpioReserved, -1, 57, 57| BP_PINMUX_VAL_4 | BP_PINMUX_SWGPIO},
+  { bp_last, -1, -1,  0 }, 
+};
+#else
 static bp_pinmux_defs_t g_pinmux_defs_0[] = {
   { bp_usSpeedLed100, 0, 0, 0 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // SPD0/port 0 is led0  pinmux 4
   { bp_usSpeedLed1000, 0, 1, 1 | BP_PINMUX_VAL_3 | BP_PINMUX_HWLED }, // SPD1/port 0 is led1  pinmux 4
@@ -945,7 +1004,7 @@ static bp_pinmux_defs_t g_pinmux_defs_0[] = {
   { bp_usSpiSlaveSelectNum, 5, 20, 20 | BP_PINMUX_VAL_2},
   { bp_last, -1, -1,  0 }, 
 };
-
+#endif
 static bp_pinmux_defs_t *g_pinmux_defs_tables[] = { g_pinmux_defs_0 } ;
 #endif
 
@@ -2217,9 +2276,6 @@ static int GetEthernetMacInfo( PETHERNET_MAC_INFO pEnetInfos, int nNumEnetInfos 
                         case bp_ulCrossbar:
                              crossbar_port = BP_PHY_PORT_TO_CROSSBAR_PORT(pPhyId->u.ul);
                              pE->sw.crossbar[crossbar_port].switch_port = j;
-#ifdef GTAC5300
-			     pE->sw.crossbar[crossbar_port].phyReset = BP_GPIO_NONE;
-#endif
                              in_crossbar = 1;
                              ++pPhyId;
                              break;
@@ -3630,30 +3686,6 @@ int BpGetEponFailLedGpio( unsigned short *pusValue )
 {
     return( BpGetGpio(bp_usGpioLedEponFail, pusValue ) );
 } /* BpGetMoCAFailLedGpio */
-
-int BpGetSesBtnWirelessExtIntr(void)
-{
-    unsigned short pusValue;
-
-    return( BpGetUs(bp_usExtIntrSesBtnWireless, &pusValue ) );
-} /* BpGetSesBtnWirelessExtIntr */
-
-int BpGetSesBtnWirelessExtIntrGpio( unsigned short *pusValue )
-{
-    int ret;
-
-    if( !g_pCurrentBp )
-    {
-        *pusValue = BP_NOT_DEFINED;
-        ret       = BP_BOARD_ID_NOT_SET;
-        return ret;
-    }
-
-    ret = BpGetExtIntrGpio(bp_usExtIntrSesBtnWireless, pusValue);
-
-    return( ret );
-
-} /* BpGetSesBtnWirelessExtIntrGpio */
 
 /**************************************************************************
 * Name       : BpGetAggregateLnkLedGpio

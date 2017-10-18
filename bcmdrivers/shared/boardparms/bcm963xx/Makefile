@@ -12,7 +12,7 @@ obj-y		+= boardparms_voice.o
 EXTRA_CFLAGS += -DCONFIG_BOARDPARMS_VOICE
 endif
 
-EXTRA_CFLAGS += -DCONFIG_BCM9$(BRCM_CHIP) -Ibcmdrivers/shared/include/bcm963xx -Ibcmdrivers/drivers/include/bcm963xx
+EXTRA_CFLAGS += -DCONFIG_BCM9$(BRCM_CHIP) -I$(INC_BRCMSHARED_PUB_PATH)/$(BRCM_BOARD) -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
 
 ifeq ($(MOCA_LAN_DISCONN),y)
 EXTRA_CFLAGS += -DCONFIG_NO_MOCA_LAN
