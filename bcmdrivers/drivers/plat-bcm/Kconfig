@@ -2,3 +2,8 @@ config BCM_MAP_LEGACY
 	bool "Legacy IO / IRQ mapper"
 	help
 		Support legacy drivers without DT support.
+
+config BCM_USB
+	bool "USB controller drivers"
+	help
+		Drivers for EHCI/OHCI/XHCI USB controllers in BCM4908.
