@@ -107,7 +107,43 @@
 		gpio0: gpio-controller@ff800500 {
 			compatible = "brcm,bcm6345-gpio";
 			reg-names = "dirout", "dat";
-			reg = <0x0 0x500 0 8>, <0x0 0x528 0 8>; /* 40 bytes actually */
+			reg = <0x0 0x500 0 8>, <0x0 0x528 0 8>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		gpio1: gpio-controller@ff800508 {
+			compatible = "brcm,bcm6345-gpio";
+			reg-names = "dirout", "dat";
+			reg = <0x0 0x508 0 8>, <0x0 0x530 0 8>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		gpio2: gpio-controller@ff800510 {
+			compatible = "brcm,bcm6345-gpio";
+			reg-names = "dirout", "dat";
+			reg = <0x0 0x510 0 8>, <0x0 0x538 0 8>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		gpio3: gpio-controller@ff800518 {
+			compatible = "brcm,bcm6345-gpio";
+			reg-names = "dirout", "dat";
+			reg = <0x0 0x518 0 8>, <0x0 0x540 0 8>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		gpio4: gpio-controller@ff800520 {
+			compatible = "brcm,bcm6345-gpio";
+			reg-names = "dirout", "dat";
+			reg = <0x0 0x520 0 8>, <0x0 0x548 0 8>;
 
 			#gpio-cells = <2>;
 			gpio-controller;
