@@ -1,0 +1,5 @@
+config BCM_BOARDPARMS_R8000P
+	bool "Board parameters for R8000P"
+	help
+		Describes detailed pinouts of the board. Applicable for R8000P only.
+
