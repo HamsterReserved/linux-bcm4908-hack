@@ -80,6 +80,7 @@
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
