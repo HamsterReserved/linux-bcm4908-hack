@@ -60,63 +60,6 @@ written consent.
 
 extern void bcm_set_pinmux(unsigned int pin_num, unsigned int mux_num);
 
-
-#define CAP_TYPE_EHCI       0x00
-#define CAP_TYPE_OHCI       0x01
-#define CAP_TYPE_XHCI       0x02
-
-static struct usb_ehci_pdata bcm_ehci_pdata = {0};
-static struct usb_ohci_pdata bcm_ohci_pdata = {0};
-
-static struct platform_device *xhci_dev;
-static struct platform_device *ehci_dev;
-static struct platform_device *ohci_dev;
-
-
-static __init struct platform_device *bcm_add_usb_host(int type, int id,
-                        uint32_t mem_base, uint32_t mem_size, int irq,
-                        const char *devname, void *private_data)
-{
-    struct resource res[2];
-    struct platform_device *pdev;
-    static const u64 usb_dmamask = DMA_BIT_MASK(32);
-
-    memset(&res, 0, sizeof(res));
-    res[0].start = mem_base;
-    res[0].end   = mem_base + (mem_size -1);
-    res[0].flags = IORESOURCE_MEM;
-
-    res[1].flags = IORESOURCE_IRQ;
-    res[1].start = res[1].end = irq;
-
-    pdev = platform_device_alloc(devname, id);
-    if(!pdev)
-    {
-        printk(KERN_ERR "Error Failed to allocate platform device for devname=%s id=%d\n",
-                devname, id);
-        return 0;
-    }
-
-    platform_device_add_resources(pdev, res, 2);
-
-    pdev->dev.dma_mask = (u64 *)&usb_dmamask;
-    pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-
-    if(private_data)
-    {
-        pdev->dev.platform_data = private_data;
-    }
-
-    if(platform_device_add(pdev))
-    {
-        printk(KERN_ERR "Error Failed to add platform device for devname=%s id=%d\n",
-                devname, id);
-        return 0;
-    }
-
-    return pdev;
-}
-
 #define XHCI_ECIRA_BASE USB_XHCI_BASE + 0xf90
 
 uint32_t xhci_ecira_read(uint32_t reg)
@@ -328,29 +271,17 @@ static int bcm_usb_host_hw_init_4908(void)
     return 0;
 }
 
-#define _BCM_USB_HOST_HW_INIT(chip_num)  bcm_usb_host_hw_init_##chip_num()
-#define BCM_USB_HOST_HW_INIT(chip_num)  _BCM_USB_HOST_HW_INIT(chip_num)
-
 static __init int bcm_add_usb_hosts(void)
 {
    
      int err;
 
-     err = BCM_USB_HOST_HW_INIT(CONFIG_BCM_CHIP_NUMBER);
+     err = bcm_usb_host_hw_init_4908();
      if(err < 0)
      {
          printk(KERN_ERR "++++ USB Host HW initialization failed \n");
          return err;
      }
-
-
-    /* add to platform devices */
-    xhci_dev = bcm_add_usb_host(CAP_TYPE_XHCI, 0, USB_XHCI_PHYS_BASE,
-        0x1000, INTERRUPT_ID_USB_XHCI, "xhci-hcd", NULL);
-    ehci_dev = bcm_add_usb_host(CAP_TYPE_EHCI, 0, USB_EHCI_PHYS_BASE,
-        0x100, INTERRUPT_ID_USB_EHCI, "ehci-platform", &bcm_ehci_pdata);
-    ohci_dev = bcm_add_usb_host(CAP_TYPE_OHCI, 0, USB_OHCI_PHYS_BASE,
-        0x100, INTERRUPT_ID_USB_OHCI, "ohci-platform", &bcm_ohci_pdata);
 
     usb3_enable_recovery_pipe_reset();
 
@@ -360,15 +291,6 @@ static __init int bcm_add_usb_hosts(void)
 #if defined CONFIG_USB_MODULE || defined CONFIG_USB_XHCI_HCD_MODULE
 static void bcm_mod_cleanup(void)
 {
-    // we want to just disable usb interrupts and power down usb
-    // we'll probably be restart later, re-add resources ok then?
-    platform_device_del(xhci_dev);
-    platform_device_del(ehci_dev);
-    platform_device_del(ohci_dev);
-#if defined(CONFIG_BCM96858)
-    platform_device_del(ehci1_dev);
-    platform_device_del(ohci1_dev);
-#endif
     pmc_usb_power_down(PMC_USB_HOST_ALL);
     mdelay(1);
 }
