@@ -23,7 +23,7 @@ config ARM_GIC_V2M
 	bool
 	depends on PCI
 	select ARM_GIC
-	select PCI_MSI
+	depends on PCI_MSI
 
 config GIC_NON_BANKED
 	bool
