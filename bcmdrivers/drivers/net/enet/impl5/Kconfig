@@ -1,6 +1,24 @@
 config BCM_ENET_NO_RDP
 	bool "Ethernet driver without RDP"
 	depends on BCM_PKTDMA
+	select BCM_GMAC
+	select BCM_ENET_4908_GMAC
 	help
 		 RDP refers to Runner Data Path. This option provides access to
 		 network by GMAC.
+
+config BCM_GMAC
+	bool
+
+config BCM_ENET_4908_GMAC
+	bool
+
+config BCM_EXT_SWITCH
+	bool "External Switch present"
+	default n
+	help
+	  This option enables the external switch support.
+
+config BCM_EXT_SWITCH_TYPE
+	int "External Switch Type/Number"
+	default 0
