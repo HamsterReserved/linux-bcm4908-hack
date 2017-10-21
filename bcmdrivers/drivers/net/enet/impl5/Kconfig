@@ -1,0 +1,6 @@
+config BCM_ENET_NO_RDP
+	bool "Ethernet driver without RDP"
+	depends on BCM_PKTDMA
+	help
+		 RDP refers to Runner Data Path. This option provides access to
+		 network by GMAC.

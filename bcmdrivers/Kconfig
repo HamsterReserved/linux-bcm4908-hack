@@ -6,6 +6,10 @@ source "bcmdrivers/drivers/plat-bcm/Kconfig"
 
 source "bcmdrivers/drivers/bus/pci/host/Kconfig"
 
+source "bcmdrivers/drivers/net/enet/impl5/Kconfig"
+
+source "bcmdrivers/drivers/net/lib/pktdma/Kconfig"
+
 source "bcmdrivers/shared/boardparms/bcm963xx/Kconfig"
 
 source "bcmdrivers/shared/pmc/Kconfig"
