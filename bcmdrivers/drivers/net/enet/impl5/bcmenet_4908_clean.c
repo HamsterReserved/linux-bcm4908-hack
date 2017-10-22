@@ -558,7 +558,6 @@ static int bcm63xx_enet_rx_thread(void *arg)
     uint32 ret_done;
     int budget = 32;
 
-
     while (1)
     {
         wait_event_interruptible(pDevCtrl->rx_thread_wqh,
@@ -637,14 +636,11 @@ static inline void flush_assign_rx_buffer(BcmEnet_devctrl *pDevCtrl, int channel
     _assign_rx_buffer( pDevCtrl, channel, pData );
 }
 
-static inline int bcmeapi_rx_pkt(BcmEnet_devctrl *pDevCtrl, unsigned char **pBuf, void **pFkb, 
-				   int *len, int *gemid, int *phy_port_id, int *is_wifi_port, struct net_device **dev,
-                                   uint32 *rxpktgood, uint32 *context_p, int *rxQueue)
+static inline int bcmeapi_rx_pkt(BcmEnet_devctrl *pDevCtrl, unsigned char **pBuf,
+				   int *len, uint32 *rxpktgood)
 {
 	DmaDesc dmaDesc;
 	BcmEnet_RxDma *rxdma = pDevCtrl->rxdma;
-        
-    *is_wifi_port = 0;
 
 	/* rxAssignedBds is only local for non-FAP builds */
 	if (rxdma->pktDmaRxInfo.rxAssignedBds == 0) {
@@ -653,7 +649,6 @@ static inline int bcmeapi_rx_pkt(BcmEnet_devctrl *pDevCtrl, unsigned char **pBuf
 		BCM_ENET_RX_DEBUG("No RxAssignedBDs for this channel\n");
 		return 1;
 	}
-
 
 	/* Read <status,length> from Rx BD at head of ring */
 	dmaDesc.word0 = bcmPktDma_EthRecv(&rxdma->pktDmaRxInfo, pBuf, len); 
@@ -684,14 +679,12 @@ static inline int bcmeapi_rx_pkt(BcmEnet_devctrl *pDevCtrl, unsigned char **pBuf
 		return 1;
 	}
 
-#if defined(CONFIG_ARM) || defined(CONFIG_ARM64) 
     cache_invalidate_len(pBuf, BCM_MAX_PKT_LEN);
-#endif /* ARM */
 
-    *phy_port_id = 0;
 
 	return 0;
 }
+
 static inline void bcmeapi_kfree_buf_irq(BcmEnet_devctrl *pDevCtrl, void  *pFkb, unsigned char *pBuf)
 {
     flush_assign_rx_buffer(pDevCtrl, 0, pBuf, pBuf);
@@ -839,15 +832,10 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
     struct net_device *dev = NULL;
     unsigned char *pBuf = NULL;
     struct sk_buff *skb = NULL;
-    int len=0, phy_port_id = -1, ret;
+    int len = 0, ret;
     uint32 rxpktgood = 0, rxpktprocessed = 0;
     uint32 rxpktmax = budget + (budget / 2);
     FkBuff_t * pFkb = NULL;
-    uint32 rxContext1 = 0; /* Dummy variable used to hold the value returned from called function -
-                              MUST not be changed from caller */
-    int is_wifi_port = 0;
-    int rxQueue;
-    int gemid = 0;
 
     /* bulk blog locking optimization only used in SMP builds */
 
@@ -866,8 +854,7 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
         /* must grab blog_lock before enet_rx_lock */
         ENET_RX_LOCK();
 
-        ret = bcmeapi_rx_pkt(pDevCtrl, &pBuf, &pFkb, &len, &gemid, &phy_port_id, &is_wifi_port, &dev, &rxpktgood, &rxContext1, &rxQueue);
-
+        ret = bcmeapi_rx_pkt(pDevCtrl, &pBuf, &len, &rxpktgood);
 
         if(ret)
         {
@@ -877,7 +864,6 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
 
         //BCM_ENET_RX_DEBUG("Processing Rx packet\n");
         rxpktprocessed++;
-
 
         dev = pVnetDev0_g->dev;
 
@@ -932,10 +918,8 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
 
     BCM_ASSERT_NOT_HAS_SPINLOCK_C(&pVnetDev0_g->ethlock_rx);
 
-
     return rxpktgood;
 }
-
 
 /*
  * Set the hardware MAC address.
