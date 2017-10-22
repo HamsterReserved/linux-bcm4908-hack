@@ -208,7 +208,7 @@ extern int dg_in_context;
 #define RECORD_BULK_RX_UNLOCK() pDevCtrl->bulk_rx_lock_active[cpuid] = 0
 #define DMA_THROUGHPUT_TEST_EN  0x80000
 
-#if !defined(CONFIG_BCM96838) && !defined(CONFIG_BCM963138) && !defined(CONFIG_BCM963148) && !defined(CONFIG_BCM96848) && !defined(CONFIG_BCM96858) && !defined(CONFIG_BCM94908)
+#if defined(CONFIG_BCM_GMAC) || defined(CONFIG_BCM_ENET_4908_GMAC)
 #include "bcmenet_dma.h"
 #else
 #include "bcmenet_runner.h"

@@ -73,6 +73,7 @@ written consent.
 #endif
 #include <linux/types.h>            /* include ISO C99 inttypes.h             */
 #include <linux/skbuff.h>           /* include corresponding BSD style mbuf   */
+#include <linux/nbuff_skbuff_addition.h>
 #include <linux/blog.h>
 #include <bcm_pkt_lengths.h>
 #if defined(CONFIG_BCM96838) || defined(CONFIG_BCM96848) \

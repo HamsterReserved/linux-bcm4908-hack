@@ -1,4 +1,3 @@
-#if defined(CONFIG_BCM_KF_LOG) || defined(CONFIG_BCM_KF_BLOG)
 /* 
  * <:copyright-BRCM:2015:DUAL/GPL:standard
  * 
@@ -84,4 +83,3 @@
 
 #endif /* __BCM_COLORS_H__ */
 
-#endif
