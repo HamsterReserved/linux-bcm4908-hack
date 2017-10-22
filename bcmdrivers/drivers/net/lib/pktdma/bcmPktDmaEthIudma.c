@@ -456,7 +456,7 @@ void bcmPktDma_BcmHalInterruptEnable(int channel, int irq)
 {
 
 #if !(defined(CONFIG_BCM_FAP) || defined(CONFIG_BCM_FAP_MODULE))
-    BcmHalInterruptEnable(irq);
+    enable_irq(irq);
 #else
   #if defined(CONFIG_BCM_PKTDMA_RX_SPLITTING)
     if(g_Eth_rx_iudma_ownership[channel] == HOST_OWNED)
@@ -475,7 +475,7 @@ void bcmPktDma_BcmHalInterruptDisable(int channel, int irq)
 {
 
 #if !(defined(CONFIG_BCM_FAP) || defined(CONFIG_BCM_FAP_MODULE))
-    BcmHalInterruptDisable(irq);
+    disable_irq(irq);
 #else
   #if defined(CONFIG_BCM_PKTDMA_RX_SPLITTING)
     if(g_Eth_rx_iudma_ownership[channel] == HOST_OWNED)

@@ -1502,13 +1502,13 @@ static inline TYPE nbuff_get_##MEMBER(pNBuff_t pNBuff)                         \
 __BUILD_NBUFF_SET_ACCESSOR(uint8_t *, data) 
 __BUILD_NBUFF_SET_ACCESSOR(uint32_t, len) 
 __BUILD_NBUFF_SET_ACCESSOR(uint32_t, mark)      /* Custom network buffer arg1 */
-__BUILD_NBUFF_SET_ACCESSOR(void *, queue)     /* Custom network buffer arg1 */
+//__BUILD_NBUFF_SET_ACCESSOR(void *, queue)     /* Custom network buffer arg1 */
 __BUILD_NBUFF_SET_ACCESSOR(uint32_t, priority)  /* Custom network buffer arg2 */
 
 __BUILD_NBUFF_GET_ACCESSOR(uint8_t *, data)
 __BUILD_NBUFF_GET_ACCESSOR(uint32_t, len)
 __BUILD_NBUFF_GET_ACCESSOR(uint32_t, mark)      /* Custom network buffer arg1 */
-__BUILD_NBUFF_GET_ACCESSOR(void *, queue)     /* Custom network buffer arg1 */
+//__BUILD_NBUFF_GET_ACCESSOR(void *, queue)     /* Custom network buffer arg1 */
 __BUILD_NBUFF_GET_ACCESSOR(uint32_t, priority)  /* Custom network buffer arg2 */
 
 /*
@@ -1690,13 +1690,15 @@ static inline void nbuff_free(pNBuff_t pNBuff)
         || defined(CONFIG_BCM_HNDROUTER) || defined(CONFIG_BCM96858)
         dev_kfree_skb_irq((struct sk_buff *)pBuf);
 #else
-        dev_kfree_skb_thread((struct sk_buff *)pBuf);
+        /* Do it NOW */
+        __kfree_skb((struct sk_buff *)pBuf);
 #endif
     }
     /* else if IS_FPBUFF_PTR, else if IS_TGBUFF_PTR */
-    else
-        fkb_free(pBuf);
-    fkb_dbg(2, "<<");
+    else {
+        printk("FKBUFF\n");
+    }
+    //fkb_dbg(2, "<<");
 }
 
 /*
@@ -1767,17 +1769,16 @@ static inline void nbuff_flushfree(pNBuff_t pNBuff)
         || defined(CONFIG_BCM_HNDROUTER) || defined(CONFIG_BCM96858)
         dev_kfree_skb_irq((struct sk_buff *)pBuf);
 #else
-        dev_kfree_skb_thread((struct sk_buff *)pBuf);
+        /* Do it NOW */
+        __kfree_skb((struct sk_buff *)pBuf);
 #endif
     }
     /* else if IS_FPBUFF_PTR, else if IS_TGBUFF_PTR */
     else
     {
-        FkBuff_t * fkb_p = (FkBuff_t *)pBuf;
-        fkb_flush(fkb_p, fkb_p->data, fkb_p->len, FKB_CACHE_FLUSH);
-        fkb_free(fkb_p);
+        printk("FKBUFF\n");
     }
-    fkb_dbg(2, "<<");
+    //fkb_dbg(2, "<<");
 }
 
 /*

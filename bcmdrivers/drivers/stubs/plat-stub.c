@@ -5,7 +5,7 @@
 #include <linux/mm.h>
 #include <linux/sysinfo.h>
 
-unsigned int getMemorySize(void)
+unsigned long getMemorySize(void)
 {
     struct sysinfo i;
     static unsigned long memsize = -1;
@@ -17,4 +17,3 @@ unsigned int getMemorySize(void)
 
     return memsize;
 }
-

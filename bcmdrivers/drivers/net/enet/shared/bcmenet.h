@@ -30,11 +30,17 @@
 
 #if defined(CONFIG_BCM_ENET_4908_GMAC)
 #include "bcmPktDma_structs.h"
+
+typedef struct sk_buff_next {
+    struct sk_buff skb;
+    struct sk_buff_next *next_free;
+} sk_buff_next_t;
+
 typedef struct BcmEnet_RxDma {
 
     BcmPktDma_LocalEthRxDma pktDmaRxInfo;
     int      rxIrq;   /* rx dma irq */
-    struct sk_buff *freeSkbList;
+    struct sk_buff_next *freeSkbList;
     uint32   channel;
 
     unsigned char   **buf_pool; //[NR_RX_BDS_MAX]; /* rx buffer pool */

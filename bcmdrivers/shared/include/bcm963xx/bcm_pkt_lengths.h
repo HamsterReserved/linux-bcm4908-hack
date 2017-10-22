@@ -174,7 +174,7 @@
 #define ENET_MAX_MTU_SIZE       (ENET_MAX_MTU_PAYLOAD_SIZE + ENET_MAX_MTU_EXTRA_SIZE)
 
 #if defined(__KERNEL__)
-#define BCM_SKB_ALIGNED_SIZE            ((sizeof(struct sk_buff) + 0x0f) & ~0x0f)
+#define BCM_SKB_ALIGNED_SIZE            ((sizeof(struct sk_buff_next) + 0x0f) & ~0x0f)
 #endif
 
 #endif /* __BCM_PKT_LENGTHS_H__ */

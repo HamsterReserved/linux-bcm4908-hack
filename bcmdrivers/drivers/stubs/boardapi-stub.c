@@ -2,6 +2,8 @@
  * Stub file to satisify PCI-E driver for functions orginally in drivers/char/board
  */
 
+#include <linux/string.h>
+
 #include <bcm_map_part.h>
 
 int kerSysGetPciePortEnable(int port)
@@ -120,3 +122,20 @@ int kerSysGetChipId(void) {
         return(r);
 }
 
+int kerSysGetSdramSize( void )
+{
+    unsigned long getMemorySize(void); /* Does not have a header */
+    return getMemorySize();
+}
+
+int kerSysGetMacAddress(unsigned char *pucaMacAddr, unsigned long ulId)
+{
+    static unsigned char macaddr[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+    memcpy(pucaMacAddr, macaddr, sizeof(macaddr));
+    return 0;
+}
+
+int kerSysReleaseMacAddress(unsigned char *pucaMacAddr)
+{
+    return 0;
+}

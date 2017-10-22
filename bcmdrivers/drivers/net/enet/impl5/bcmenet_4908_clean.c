@@ -114,7 +114,7 @@ static int __init bcmenet_module_init(void);
 
 static int bcm63xx_enet_open(struct net_device * dev);
 static int bcm63xx_enet_close(struct net_device * dev);
-static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device * dev);
+static int bcm63xx_enet_xmit(struct sk_buff *pNBuff, struct net_device * dev);
 static int bcm_set_mac_addr(struct net_device *dev, void *p);
 static int bcm63xx_enet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
 static void bcm63xx_enet_timeout(struct net_device * dev);
@@ -135,7 +135,7 @@ struct kmem_cache *enetSkbCache;
 static const struct net_device_ops bcm96xx_netdev_ops = {
     .ndo_open   = bcm63xx_enet_open,
     .ndo_stop   = bcm63xx_enet_close,
-    .ndo_start_xmit   = (HardStartXmitFuncP)bcm63xx_enet_xmit,
+    .ndo_start_xmit   = bcm63xx_enet_xmit,
     .ndo_set_mac_address  = bcm_set_mac_addr,
     .ndo_do_ioctl   = bcm63xx_enet_ioctl,
     .ndo_tx_timeout   = bcm63xx_enet_timeout,
@@ -155,62 +155,10 @@ static inline volatile DmaRegs *get_dmaCtrl( void )
 
     return dmaCtrl;
 }
+
 static inline int get_phy_chan( int channel )
 {
     return 0;
-}
-
-unsigned short bcm_type_trans(struct sk_buff *skb, struct net_device *dev)
-{
-    struct ethhdr *eth;
-    unsigned char *rawp;
-    unsigned int hdrlen = sizeof(struct ethhdr);
-
-    skb_reset_mac_header(skb);
-
-    skb_pull(skb, hdrlen);
-    eth = (struct ethhdr *)skb_mac_header(skb);
-
-    if(*eth->h_dest&1)
-    {
-        if(memcmp(eth->h_dest,dev->broadcast, ETH_ALEN)==0)
-            skb->pkt_type=PACKET_BROADCAST;
-        else
-            skb->pkt_type=PACKET_MULTICAST;
-    }
-
-    /*
-     *  This ALLMULTI check should be redundant by 1.4
-     *  so don't forget to remove it.
-     *
-     *  Seems, you forgot to remove it. All silly devices
-     *  seems to set IFF_PROMISC.
-     */
-
-    else if(1 /*dev->flags&IFF_PROMISC*/)
-    {
-        if(memcmp(eth->h_dest,dev->dev_addr, ETH_ALEN))
-            skb->pkt_type=PACKET_OTHERHOST;
-    }
-
-    if (ntohs(eth->h_proto) >= 1536)
-        return eth->h_proto;
-
-    rawp = skb->data;
-
-    /*
-     *  This is a magic hack to spot IPX packets. Older Novell breaks
-     *  the protocol design and runs IPX over 802.3 without an 802.2 LLC
-     *  layer. We look for FFFF which isn't a used 802.2 SSAP/DSAP. This
-     *  won't work for fault tolerant netware but does for the rest.
-     */
-    if (*(unsigned short *)rawp == 0xFFFF)
-        return htons(ETH_P_802_3);
-
-    /*
-     *  Real 802.2 LLC
-     */
-    return htons(ETH_P_802_2);
 }
 
 void extsw_wreg_mmap(int page, int reg, uint8 *data_in, int len);
@@ -453,8 +401,6 @@ static inline int bcmeapi_pkt_xmt_dispatch(EnetXmitParams *pParam)
     /* FAP is compiled out */
     bufSource = HOST_VIA_LINUX;
 
-    nbuff_flush(pParam->pNBuff, pParam->data, pParam->len);
-
     bcmPktDma_EthXmitNoCheck_Iudma(txdma,
                         pParam->data, pParam->len, bufSource,
                         pParam->dmaDesc.status, key, param1, 
@@ -481,7 +427,7 @@ static inline void bcmeapi_xmit_unlock_drop_exit_post(EnetXmitParams *pXmitParam
 Name: bcm63xx_enet_xmit
 Purpose: Send ethernet traffic
 -------------------------------------------------------------------------- */
-static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device *dev)
+static int bcm63xx_enet_xmit(struct sk_buff *pNBuff, struct net_device *dev)
 {
     EnetXmitParams param, *pParam;
 
@@ -491,7 +437,6 @@ static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device *dev)
     //printk("bcm63xx_enet_xmit called\n");
     param.pDevPriv = netdev_priv(dev);
     param.port_id  = 0;
-    param.pNBuff = pNBuff;
 
     if (nbuff_get_params_ext(pNBuff, &param.data, &param.len,
                 &param.mark, &param.priority, &param.r_flags) == NULL)
@@ -500,14 +445,7 @@ static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device *dev)
         return 0;
     }
 
-    if(IS_FKBUFF_PTR(pParam->pNBuff))
-    {
-        pParam->pFkb = PNBUFF_2_FKBUFF(pParam->pNBuff);
-    }
-    else
-    {
-        pParam->skb = PNBUFF_2_SKBUFF(pParam->pNBuff);
-    }
+    pParam->skb = pNBuff;
 
     bcmeapi_buf_reclaim(pParam);
 
@@ -520,7 +458,7 @@ static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device *dev)
 
     if ( pParam->len < ETH_ZLEN )
     {
-        nbuff_pad(pParam->pNBuff, ETH_ZLEN - pParam->len);
+        skb_pad(pParam->pNBuff, ETH_ZLEN - pParam->len);
         pParam->len = ETH_ZLEN;
     }
 
@@ -623,8 +561,6 @@ static inline void _assign_rx_buffer(BcmEnet_devctrl *pDevCtrl, int channel, uin
         bcmPktDma_EthFreeRecvBuf(pktDmaRxInfo_p, pData);
     }
 
-
-
     ENET_RX_UNLOCK();
     preempt_enable();
 }
@@ -681,18 +617,17 @@ static inline int bcmeapi_rx_pkt(BcmEnet_devctrl *pDevCtrl, unsigned char **pBuf
 
     cache_invalidate_len(pBuf, BCM_MAX_PKT_LEN);
 
-
 	return 0;
 }
 
-static inline void bcmeapi_kfree_buf_irq(BcmEnet_devctrl *pDevCtrl, void  *pFkb, unsigned char *pBuf)
+static inline void bcmeapi_kfree_buf_irq(BcmEnet_devctrl *pDevCtrl, unsigned char *pBuf)
 {
     flush_assign_rx_buffer(pDevCtrl, 0, pBuf, pBuf);
 }
 
-static inline void bcmeapi_blog_drop(BcmEnet_devctrl *pDevCtrl, void  *pFkb, unsigned char *pBuf)
+static inline void bcmeapi_blog_drop(BcmEnet_devctrl *pDevCtrl, unsigned char *pBuf)
 {
-    bcmeapi_kfree_buf_irq(pDevCtrl, NULL, pBuf);
+    bcmeapi_kfree_buf_irq(pDevCtrl, pBuf);
 }
 
 static inline int bcmeapi_alloc_skb(BcmEnet_devctrl *pDevCtrl, struct sk_buff **skb)
@@ -700,7 +635,7 @@ static inline int bcmeapi_alloc_skb(BcmEnet_devctrl *pDevCtrl, struct sk_buff **
 	BcmEnet_RxDma *rxdma = pDevCtrl->rxdma;
 
 	if (rxdma->freeSkbList) {
-		*skb = rxdma->freeSkbList;
+		*skb = &rxdma->freeSkbList->skb;
 		rxdma->freeSkbList = rxdma->freeSkbList->next_free;
 	}
 	else {
@@ -736,7 +671,8 @@ typedef union {
 static inline int bcmeapi_free_skb(BcmEnet_devctrl *pDevCtrl, 
     struct sk_buff *skb, int free_flag, int channel)
 {
-    BcmEnet_RxDma * rxdma;
+	BcmEnet_RxDma * rxdma;
+	struct sk_buff_next *skbnext = container_of(skb, struct sk_buff_next, skb);
 
     if( !(free_flag & SKB_RECYCLE ))
     {
@@ -753,14 +689,14 @@ static inline int bcmeapi_free_skb(BcmEnet_devctrl *pDevCtrl,
     ENET_RX_LOCK();
 
     rxdma = pDevCtrl->rxdma;
-    if ((unsigned char *)skb < rxdma->skbs_p || (unsigned char *)skb >= rxdma->end_skbs_p)
+    if ((unsigned char *)skbnext < rxdma->skbs_p || (unsigned char *)skbnext >= rxdma->end_skbs_p)
     {
-        kmem_cache_free(enetSkbCache, skb);
+        kmem_cache_free(enetSkbCache, skbnext);
     }
     else
     {
-        skb->next_free = rxdma->freeSkbList;
-        rxdma->freeSkbList = skb;      
+        skbnext->next_free = rxdma->freeSkbList;
+        rxdma->freeSkbList = skbnext;
     }
 
     ENET_RX_UNLOCK();
@@ -785,39 +721,11 @@ static inline void bcm63xx_enet_recycle_skb_or_data(struct sk_buff *skb,
     }
 }
 
-static inline int bcmeapi_skb_headerinit(int len, BcmEnet_devctrl *pDevCtrl, struct sk_buff *skb, 
-    FkBuff_t * pFkb, unsigned char *pBuf)
-{
-    uintptr_t recycle_context = 0;
-
-    RECYCLE_CONTEXT(recycle_context)->channel = 0;
-
-    skb_headerinit(BCM_PKT_HEADROOM,
-            BCM_MAX_PKT_LEN,
-            skb, pBuf, (RecycleFuncP)bcm63xx_enet_recycle_skb_or_data,
-            recycle_context,(void*)pFkb->blog_p);
-
-    skb_trim(skb, len - ETH_CRC_LEN);
-
-    return 0;
-}
-
-/* Callback: fkb and data recycling */
-static inline void __bcm63xx_enet_recycle_fkb(struct fkbuff * pFkb,
-                                              uint32 context)
-{
-    int channel = FKB_RECYCLE_CONTEXT(pFkb)->channel;
-    BcmEnet_devctrl *pDevCtrl = (BcmEnet_devctrl *)netdev_priv(pVnetDev0_g->dev);
-    uint8 *pData = PFKBUFF_TO_PDATA(pFkb,BCM_PKT_HEADROOM);
-
-    _assign_rx_buffer(pDevCtrl, channel, pData); /* No cache flush */
-}
-
 /* Common recycle callback for fkb, skb or data */
 static inline void bcm63xx_enet_recycle(pNBuff_t pNBuff, uint32 context, uint32 flags)
 {
     if ( IS_FKBUFF_PTR(pNBuff) ) {
-        __bcm63xx_enet_recycle_fkb(PNBUFF_2_FKBUFF(pNBuff), context);
+        printk("ERROR: FKBUFF\n");
     } else { /* IS_SKBUFF_PTR(pNBuff) */
         bcm63xx_enet_recycle_skb_or_data(PNBUFF_2_SKBUFF(pNBuff),context,flags);
     }
@@ -835,7 +743,6 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
     int len = 0, ret;
     uint32 rxpktgood = 0, rxpktprocessed = 0;
     uint32 rxpktmax = budget + (budget / 2);
-    FkBuff_t * pFkb = NULL;
 
     /* bulk blog locking optimization only used in SMP builds */
 
@@ -871,47 +778,29 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
         pDevCtrl->stats.rx_packets++;
         pDevCtrl->stats.rx_bytes += len;
 
-        /* FkBuff_t<data,len> in-placed leaving headroom */
-        pFkb = fkb_init(pBuf, BCM_PKT_HEADROOM,
-                pBuf, len - ETH_CRC_LEN );
-        {
-            uint32 context = 0;
-
-            RECYCLE_CONTEXT(context)->channel = 0;
-
-            pFkb->recycle_hook = (RecycleFuncP)bcm63xx_enet_recycle;
-            pFkb->recycle_context = context;
-        }
-
-        /*allocate skb & initialize it using fkb */
-
+        /* allocate skb */
         if (bcmeapi_alloc_skb(pDevCtrl, &skb)) {
             ENET_RX_UNLOCK();
-            fkb_release(pFkb);
             pDevCtrl->stats.rx_dropped++;
-            bcmeapi_kfree_buf_irq(pDevCtrl, pFkb, pBuf);
+            bcmeapi_kfree_buf_irq(pDevCtrl, pBuf);
             if ( rxpktprocessed < rxpktmax )
                 continue;
             break;
         }
+
+        skb->len = len - ETH_FCS_LEN;
+		skb->dev = dev;
+		skb->data = skb->head = pBuf;
+		skb->tail = skb->end = pBuf + skb->len;
+        skb->protocol = eth_type_trans(skb, dev);
+
+        netif_receive_skb(skb);
 
         /*
          * We are outside of the fast path and not touching any
          * critical variables, so release all locks.
          */
         ENET_RX_UNLOCK();
-
-        if(bcmeapi_skb_headerinit(len, pDevCtrl, skb, pFkb, pBuf))
-        {
-            bcmeapi_kfree_buf_irq(pDevCtrl, pFkb, pBuf);
-            continue;
-        }
-
-        skb->protocol = bcm_type_trans(skb, dev);
-        skb->dev = dev;
-        
-        netif_receive_skb(skb);
-
     } /* end while (budget > 0) */
 
     pDevCtrl->dev->last_rx = jiffies;
@@ -975,7 +864,7 @@ static inline int get_rxIrq( int channel )
                (x)->rx_work_avail = 1; \
                wake_up_interruptible(&((x)->rx_thread_wqh)); }} while (0)
 
-static FN_HANDLER_RT bcmeapi_enet_isr(int irq, void * pContext)
+static irqreturn_t bcmeapi_enet_isr(int irq, void * pContext)
 {
     /* this code should not run in DQM operation !!! */
 
@@ -992,8 +881,9 @@ static FN_HANDLER_RT bcmeapi_enet_isr(int irq, void * pContext)
 
     BCMENET_WAKEUP_RXWORKER(pDevCtrl);
 
-    return BCM_IRQ_HANDLED;
+    return IRQ_HANDLED;
 }
+
 #define CONTEXT_CHAN_MASK   0x3
 #define BUILD_CONTEXT(pDevCtrl,channel) \
             (uintptr_t)((uintptr_t)(pDevCtrl) | ((uintptr_t)(channel) & CONTEXT_CHAN_MASK))
@@ -1014,22 +904,16 @@ static int bcm63xx_init_rxdma_structures(int channel, BcmEnet_devctrl *pDevCtrl)
     rxdma = pDevCtrl->rxdma;
     rxdma->pktDmaRxInfo.channel = channel;
 
-
     /* init number of Rx BDs in each rx ring */
     rxdma->pktDmaRxInfo.numRxBds =
                     bcmPktDma_EthGetRxBds( &rxdma->pktDmaRxInfo, channel );
 
+	/* request IRQs only once at module init */
+	int rxIrq = bcmPktDma_EthSelectRxIrq(channel);
 
-    {
-        /* request IRQs only once at module init */
-        {
-            int rxIrq = bcmPktDma_EthSelectRxIrq(channel);
-
-            rxIrq = get_rxIrq(channel);
-            BcmHalMapInterrupt(bcmeapi_enet_isr,
-                (void*)(BUILD_CONTEXT(pDevCtrl,channel)), rxIrq);
-        }
-    }
+	rxIrq = get_rxIrq(channel);
+	request_irq(rxIrq, bcmeapi_enet_isr, 0, "enet",
+		(void*)(BUILD_CONTEXT(pDevCtrl,channel)));
 
     return 0;
 }
@@ -1039,15 +923,12 @@ static int bcm63xx_alloc_txdma_bds(int channel, BcmEnet_devctrl *pDevCtrl)
    BcmPktDma_EthTxDma *txdma;
    int nr_tx_bds;
    bool do_align = TRUE;
-#if ( defined(CONFIG_ARM) || defined(CONFIG_ARM64) )
    uint32 phy_addr;
-#endif
 
    txdma = pDevCtrl->txdma;
    nr_tx_bds = txdma->numTxBds;
 
    /* BDs allocated in bcmPktDma lib in PSM or in DDR */
-#if ( defined(CONFIG_ARM) || defined(CONFIG_ARM64) )
    txdma->txBdsBase = bcmPktDma_EthAllocTxBds(&pDevCtrl->dev->dev, channel, nr_tx_bds, &phy_addr);
    txdma->txBdsPhysBase = (volatile DmaDesc *)(uintptr_t)phy_addr;
    /* Assumption : allocated BDs are 16 Byte aligned */
@@ -1058,30 +939,6 @@ static int bcm63xx_alloc_txdma_bds(int channel, BcmEnet_devctrl *pDevCtrl)
    txdma->txRecycle = (BcmPktDma_txRecycle_t*)(((uintptr_t)txdma->txRecycleBase + BCM_DCACHE_ALIGN_LEN) & ~BCM_DCACHE_ALIGN_LEN); 
    do_align = FALSE; /* No further alignment needed */
    txdma->txBds = txdma->txBdsBase;
-#else
-   txdma->txBdsBase = bcmPktDma_EthAllocTxBds(channel, nr_tx_bds);
-   if ( txdma->txBdsBase == NULL )
-   {
-      printk("Unable to allocate memory for Tx Descriptors \n");
-      return -ENOMEM;
-   }
-
-   BCM_ENET_DEBUG("bcm63xx_alloc_txdma_bds txdma->txBdsBase 0x%p nr_tx_bds = %d\n", txdma->txBdsBase,nr_tx_bds);
-
-   txdma->txBds = txdma->txBdsBase;
-   txdma->txRecycle = (BcmPktDma_txRecycle_t *)((uintptr_t)txdma->txBds + (nr_tx_bds * sizeof(DmaDesc)));
-
-        /* Align BDs to a 16/32 byte boundary - Apr 2010 */
-    if(do_align) {
-        txdma->txBds = (volatile void *)(((uintptr_t)txdma->txBds + 0xF) & ~0xF);
-        txdma->txBds = (volatile void *)CACHE_TO_NONCACHE(txdma->txBds);
-        txdma->txRecycle = (BcmPktDma_txRecycle_t *)((uintptr_t)txdma->txBds + (nr_tx_bds * sizeof(DmaDesc)));
-        txdma->txRecycle = (BcmPktDma_txRecycle_t *)NONCACHE_TO_CACHE(txdma->txRecycle);
-    }
-    /* BDs allocated in bcmPktDma lib in PSM or in DDR */
-    memset((char *) txdma->txBds, 0, sizeof(DmaDesc) * nr_tx_bds );
-
-#endif
 
    txdma->txFreeBds = nr_tx_bds;
    txdma->txHeadIndex = txdma->txTailIndex = 0;
@@ -1099,15 +956,12 @@ static void setup_txdma_channel(int channel)
     txdma = pVnetDev0_g->txdma;
 
     StateRam = (DmaStateRam *)&dmaCtrl->stram.s[(phy_chan*2) + 1];
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM)
+
     /* Explicitly assign the StateRam values */
     StateRam->baseDescPtr = 0 ;
     StateRam->state_data = 0 ;
     StateRam->desc_len_status = 0 ;
     StateRam->desc_base_bufptr = 0 ;
-#else
-    memset(StateRam, 0, sizeof(DmaStateRam));
-#endif
 
     BCM_ENET_DEBUG("setup_txdma_channel: %d, baseDesc 0x%x\n",
         (int)channel, (unsigned int)VIRT_TO_PHY((uint32 *)txdma->txBds));
@@ -1116,11 +970,7 @@ static void setup_txdma_channel(int channel)
     txdma->txDma->maxBurst = DMA_MAX_BURST_LENGTH;
     txdma->txDma->intMask = 0;
 
-#if ( defined(CONFIG_ARM) || defined(CONFIG_ARM64) )
     dmaCtrl->stram.s[(phy_chan * 2) + 1].baseDescPtr = (uint32)(uintptr_t)txdma->txBdsPhysBase;
-#else
-    dmaCtrl->stram.s[(phy_chan * 2) + 1].baseDescPtr = (uint32)VIRT_TO_PHY((uint32 *)txdma->txBds);
-#endif
 }
 
 static int init_tx_channel(BcmEnet_devctrl *pDevCtrl, int channel)
@@ -1159,38 +1009,26 @@ static int init_tx_channel(BcmEnet_devctrl *pDevCtrl, int channel)
 /* Note: this may be called from an atomic context */
 static int bcm63xx_alloc_rxdma_bds(int channel, BcmEnet_devctrl *pDevCtrl)
 {
-   BcmEnet_RxDma *rxdma;
-   rxdma = pDevCtrl->rxdma;
+	BcmEnet_RxDma *rxdma;
+	rxdma = pDevCtrl->rxdma;
 
-#if ( defined(CONFIG_ARM) || defined(CONFIG_ARM64) )
-{
-   uint32 phy_addr;
-   rxdma->pktDmaRxInfo.rxBdsBase = bcmPktDma_EthAllocRxBds(&pDevCtrl->dev->dev, channel, rxdma->pktDmaRxInfo.numRxBds, &phy_addr);
-   if ( rxdma->pktDmaRxInfo.rxBdsBase == NULL )
-   {
-      printk("Unable to allocate memory for Rx Descriptors \n");
-      return -ENOMEM;
-   }
-   rxdma->pktDmaRxInfo.rxBds = (volatile DmaDesc *)(((uintptr_t)rxdma->pktDmaRxInfo.rxBdsBase + BCM_DCACHE_ALIGN_LEN) & ~BCM_DCACHE_ALIGN_LEN);
-   rxdma->pktDmaRxInfo.rxBdsPhysBase = (volatile DmaDesc *)(uintptr_t)phy_addr;
-}
-#else
-   rxdma->pktDmaRxInfo.rxBdsBase = bcmPktDma_EthAllocRxBds(channel, rxdma->pktDmaRxInfo.numRxBds);
-   if ( rxdma->pktDmaRxInfo.rxBdsBase == NULL )
-   {
-      printk("Unable to allocate memory for Rx Descriptors \n");
-      return -ENOMEM;
-   }
-   /* Align BDs to a 16-byte boundary - Apr 2010 */
-   rxdma->pktDmaRxInfo.rxBds = (volatile DmaDesc *)(((uintptr_t)rxdma->pktDmaRxInfo.rxBdsBase + 0xF) & ~0xF);
-   rxdma->pktDmaRxInfo.rxBds = (volatile DmaDesc *)CACHE_TO_NONCACHE(rxdma->pktDmaRxInfo.rxBds);
-#endif
-   /* Local copy of these vars also initialized to zero in bcmPktDma channel init */
-   rxdma->pktDmaRxInfo.rxAssignedBds = 0;
-   rxdma->pktDmaRxInfo.rxHeadIndex = rxdma->pktDmaRxInfo.rxTailIndex = 0;
+	uint32 phy_addr;
+	rxdma->pktDmaRxInfo.rxBdsBase = bcmPktDma_EthAllocRxBds(&pDevCtrl->dev->dev, channel, rxdma->pktDmaRxInfo.numRxBds, &phy_addr);
+	if ( rxdma->pktDmaRxInfo.rxBdsBase == NULL )
+	{
+		printk("Unable to allocate memory for Rx Descriptors \n");
+		return -ENOMEM;
+	}
+	rxdma->pktDmaRxInfo.rxBds = (volatile DmaDesc *)(((uintptr_t)rxdma->pktDmaRxInfo.rxBdsBase + BCM_DCACHE_ALIGN_LEN) & ~BCM_DCACHE_ALIGN_LEN);
+	rxdma->pktDmaRxInfo.rxBdsPhysBase = (volatile DmaDesc *)(uintptr_t)phy_addr;
 
-   return 0;
+	/* Local copy of these vars also initialized to zero in bcmPktDma channel init */
+	rxdma->pktDmaRxInfo.rxAssignedBds = 0;
+	rxdma->pktDmaRxInfo.rxHeadIndex = rxdma->pktDmaRxInfo.rxTailIndex = 0;
+
+	return 0;
 }
+
 static void setup_rxdma_channel(int channel)
 {
     BcmEnet_RxDma *rxdma = pVnetDev0_g->rxdma;
@@ -1294,19 +1132,19 @@ static int init_buffers(BcmEnet_devctrl *pDevCtrl, int channel)
                                      GFP_ATOMIC)) == NULL )
             return -ENOMEM;
 
-        memset(rxdma->skbs_p, 0,
-               (rxdma->pktDmaRxInfo.numRxBds * BCM_SKB_ALIGNED_SIZE) + BCM_DCACHE_LINE_LEN);
+			memset(rxdma->skbs_p, 0,
+				(rxdma->pktDmaRxInfo.numRxBds * BCM_SKB_ALIGNED_SIZE) + BCM_DCACHE_LINE_LEN);
 
-        rxdma->freeSkbList = NULL;
+			rxdma->freeSkbList = NULL;
 
-        /* Chain socket skbs */
-        for (i = 0, pSkbuff = (unsigned char *)
-             (((unsigned long) rxdma->skbs_p + BCM_DCACHE_ALIGN_LEN) & ~BCM_DCACHE_ALIGN_LEN);
-            i < rxdma->pktDmaRxInfo.numRxBds; i++, pSkbuff += BCM_SKB_ALIGNED_SIZE)
-        {
-            ((struct sk_buff *) pSkbuff)->next_free = rxdma->freeSkbList;
-            rxdma->freeSkbList = (struct sk_buff *) pSkbuff;
-        }
+			/* Chain socket skbs */
+			for (i = 0, pSkbuff = (unsigned char *)
+			(((unsigned long) rxdma->skbs_p + BCM_DCACHE_ALIGN_LEN) & ~BCM_DCACHE_ALIGN_LEN);
+			i < rxdma->pktDmaRxInfo.numRxBds; i++, pSkbuff += BCM_SKB_ALIGNED_SIZE)
+			{
+				((struct sk_buff_next *) pSkbuff)->next_free = rxdma->freeSkbList;
+				rxdma->freeSkbList = (struct sk_buff_next *) pSkbuff;
+			}
     }
     rxdma->end_skbs_p = rxdma->skbs_p + (rxdma->pktDmaRxInfo.numRxBds * BCM_SKB_ALIGNED_SIZE) + BCM_DCACHE_LINE_LEN;
 
@@ -1802,9 +1640,6 @@ static int bcm63xx_enet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
                     }
                     break;
 
-                case ETHSWDUMPMIB:
-                    gmac_dump_mib(e->type);
-                    break;
                 default:
                     printk("bcm63xx_enet_ioctl() : dev=%s SIOCETHSWCTLOPS op= < %d >\n",dev->name, e->op);
                     break;
@@ -1876,12 +1711,6 @@ static int __init bcmenet_module_init(void)
     int status;
 
     TRACE(("bcm63xxenet: bcmenet_module_init\n"));
-
-    if ( BCM_SKB_ALIGNED_SIZE != skb_aligned_size() )
-    {
-        printk("skb_aligned_size mismatch. Need to recompile enet module\n");
-        return -ENOMEM;
-    }
 
     /* create a slab cache for device descriptors */
     enetSkbCache = kmem_cache_create("bcm_EnetSkbCache",
