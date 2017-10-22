@@ -136,16 +136,13 @@ void gmac_hw_stats( struct net_device_stats *stats)
 
     stats->rx_packets = e->RxPkts;
     stats->rx_bytes = (unsigned long) e->RxOctetsLo;
-    stats->multicast = e->RxMulticastPkts;
-    stats->rx_broadcast_packets = e->RxBroadcastPkts;		
+    stats->multicast = e->RxMulticastPkts;	
     stats->rx_dropped = (unsigned long) (e->RxPkts - e->RxGoodPkts);
     stats->rx_errors = (unsigned long) 
         (e->RxFCSErrs + e->RxAlignErrs + e->RxSymbolError);
         
     stats->tx_packets = (unsigned long) e->TxPkts;
-    stats->tx_bytes = (unsigned long) e->TxOctetsLo;
-    stats->tx_multicast_packets = e->TxMulticastPkts;
-    stats->tx_broadcast_packets = e->TxBroadcastPkts;		
+    stats->tx_bytes = (unsigned long) e->TxOctetsLo;	
     stats->tx_dropped = (unsigned long) (e->TxPkts - e->TxGoodPkts);
 }
 
@@ -227,269 +224,6 @@ void extsw_rreg_mmap(int page, int reg, uint8 *data_out, int len)
     memcpy(data_out, data, len);
 }
 
-#define extsw_rreg_wrap(a, b, v, l) extsw_rreg_mmap(a, b, (uint8*)v, (int)l)
-static int sf2_bcmsw_dump_mib_ext(int port, int type)
-{
-    unsigned int v32, errcnt;
-    //uint8 data[8] = {0};
-
-    /* Display Tx statistics */
-    printk("External Switch Stats : Port# %d\n",port);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXUPKTS, &v32, 4);  // Get TX unicast packet count
-    printk("TxUnicastPkts:          %10u \n", v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXMPKTS, &v32, 4);  // Get TX multicast packet count
-    printk("TxMulticastPkts:        %10u \n",  v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXBPKTS, &v32, 4);  // Get TX broadcast packet count
-    printk("TxBroadcastPkts:        %10u \n", v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXDROPS, &v32, 4);
-    printk("TxDropPkts:             %10u \n", v32);
-
-    if (type)
-    {
-    /*
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXOCTETS, data, DATA_TYPE_MIB_COUNT|8);
-        v32 = (((uint32*)data)[0]);
-        printk("TxOctetsLo:             %10u \n", v32);
-        v32 = (((uint32*)data)[1]);
-        printk("TxOctetsHi:             %10u \n", v32);
-        */
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TX64OCTPKTS, &v32, 4);
-        printk("TxPkts64Octets:         %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TX127OCTPKTS, &v32, 4);
-        printk("TxPkts65to127Octets:    %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TX255OCTPKTS, &v32, 4);
-        printk("TxPkts128to255Octets:   %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TX511OCTPKTS, &v32, 4);
-        printk("TxPkts256to511Octets:   %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TX1023OCTPKTS, &v32, 4);
-        printk("TxPkts512to1023Octets:  %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXMAXOCTPKTS, &v32, 4);
-        printk("TxPkts1024OrMoreOctets: %10u \n", v32);
-//
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ0PKT, &v32, 4);
-        printk("TxQ0Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ1PKT, &v32, 4);
-        printk("TxQ1Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ2PKT, &v32, 4);
-        printk("TxQ2Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ3PKT, &v32, 4);
-        printk("TxQ3Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ4PKT, &v32, 4);
-        printk("TxQ4Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ5PKT, &v32, 4);
-        printk("TxQ5Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ6PKT, &v32, 4);
-        printk("TxQ6Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXQ7PKT, &v32, 4);
-        printk("TxQ7Pkts:               %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXCOL, &v32, 4);
-        printk("TxCol:                  %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXSINGLECOL, &v32, 4);
-        printk("TxSingleCol:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXMULTICOL, &v32, 4);
-        printk("TxMultipleCol:          %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXDEFERREDTX, &v32, 4);
-        printk("TxDeferredTx:           %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXLATECOL, &v32, 4);
-        printk("TxLateCol:              %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXEXCESSCOL, &v32, 4);
-        printk("TxExcessiveCol:         %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXFRAMEINDISC, &v32, 4);
-        printk("TxFrameInDisc:          %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXPAUSEPKTS, &v32, 4);
-        printk("TxPausePkts:            %10u \n", v32);
-    }
-    else
-    {
-        errcnt=0;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXCOL, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXSINGLECOL, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXMULTICOL, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXDEFERREDTX, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXLATECOL, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXEXCESSCOL, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_TXFRAMEINDISC, &v32, 4);
-        errcnt += v32;
-        printk("TxOtherErrors:          %10u \n", errcnt);
-    }
-
-    /* Display Rx statistics */
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXUPKTS, &v32, 4);  // Get RX unicast packet count
-    printk("RxUnicastPkts:          %10u \n", v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXMPKTS, &v32, 4);  // Get RX multicast packet count
-    printk("RxMulticastPkts:        %10u \n",v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXBPKTS, &v32, 4);  // Get RX broadcast packet count
-    printk("RxBroadcastPkts:        %10u \n",v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXDROPS, &v32, 4);
-    printk("RxDropPkts:             %10u \n",v32);
-    extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXDISCARD, &v32, 4);
-    printk("RxDiscard:              %10u \n", v32);
-
-    if (type)
-    {
-    /*
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXOCTETS, data, DATA_TYPE_MIB_COUNT|8);
-        v32 = (((uint32*)data)[0]);
-        printk("RxOctetsLo:             %10u \n", v32);
-        v32 = (((uint32*)data)[1]);
-        printk("RxOctetsHi:             %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXGOODOCT, data, DATA_TYPE_MIB_COUNT|8);
-        v32 = (((uint32*)data)[0]);
-        printk("RxGoodOctetsLo:         %10u \n", v32);
-        v32 = (((uint32*)data)[1]);
-        */
-        printk("RxGoodOctetsHi:         %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXJABBERS, &v32, 4);
-        printk("RxJabbers:              %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXALIGNERRORS, &v32, 4);
-        printk("RxAlignErrs:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXFCSERRORS, &v32, 4);
-        printk("RxFCSErrs:              %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXFRAGMENTS, &v32, 4);
-        printk("RxFragments:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXOVERSIZE, &v32, 4);
-        printk("RxOversizePkts:         %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXUNDERSIZEPKTS, &v32, 4);
-        printk("RxUndersizePkts:        %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXPAUSEPKTS, &v32, 4);
-        printk("RxPausePkts:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXSACHANGES, &v32, 4);
-        printk("RxSAChanges:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXSYMBOLERRORS, &v32, 4);
-        printk("RxSymbolError:          %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RX64OCTPKTS, &v32, 4);
-        printk("RxPkts64Octets:         %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RX127OCTPKTS, &v32, 4);
-        printk("RxPkts65to127Octets:    %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RX255OCTPKTS, &v32, 4);
-        printk("RxPkts128to255Octets:   %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RX511OCTPKTS, &v32, 4);
-        printk("RxPkts256to511Octets:   %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RX1023OCTPKTS, &v32, 4);
-        printk("RxPkts512to1023Octets:  %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXMAXOCTPKTS, &v32, 4);
-        printk("RxPkts1024OrMoreOctets: %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXJUMBOPKT , &v32, 4);
-        printk("RxJumboPkts:            %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXOUTRANGEERR, &v32, 4);
-        printk("RxOutOfRange:           %10u \n", v32);
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXINRANGEERR, &v32, 4);
-        printk("RxInRangeErr:           %10u \n", v32);
-    }
-    else
-    {
-        errcnt=0;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXJABBERS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXALIGNERRORS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXFCSERRORS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXFRAGMENTS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXOVERSIZE, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXUNDERSIZEPKTS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXSYMBOLERRORS, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXOUTRANGEERR, &v32, 4);
-        errcnt += v32;
-        extsw_rreg_wrap(PAGE_MIB_P0 + (port), SF2_REG_MIB_P0_RXINRANGEERR, &v32, 4);
-        errcnt += v32;
-        printk("RxOtherErrors:          %10u \n", errcnt);
-
-    }
-
-    return 0;
-}
-
-void switch_dump(int type)
-{
-    //sf2_bcmsw_dump_mib_ext(1, 1);
-    sf2_bcmsw_dump_mib_ext(2, type);
-    //sf2_bcmsw_dump_mib_ext(3, 1);
-    sf2_bcmsw_dump_mib_ext(8, type);
-}
-
-/* Dumps the MIB from GMAC MIB Regs */
-int gmac_dump_mib(int type)
-{
-    volatile GmacMIBRegs *e = (volatile GmacMIBRegs *)GMAC_MIB;
-
-    switch_dump(type);
-    /* Display Tx statistics */
-    printk("\n");
-    printk("TxUnicastPkts:          %10u \n", e->TxUnicastPkts);
-    printk("TxMulticastPkts:        %10u \n",  e->TxMulticastPkts);
-    printk("TxBroadcastPkts:        %10u \n", e->TxBroadcastPkts);
-    printk("TxDropPkts:             %10u \n", (e->TxPkts - e->TxGoodPkts));
-
-    /* Display remaining tx stats only if requested */
-    if (type) {
-        printk("TxOctetsLo:             %10u \n", e->TxOctetsLo);
-        printk("TxOctetsHi:             %10u \n", 0);
-        printk("TxQoSPkts:              %10u \n", e->TxGoodPkts);
-        printk("TxCol:                  %10u \n", e->TxCol);
-        printk("TxSingleCol:            %10u \n", e->TxSingleCol);
-        printk("TxMultipleCol:          %10u \n", e->TxMultipleCol);
-        printk("TxDeferredTx:           %10u \n", e->TxDeferredTx);
-        printk("TxLateCol:              %10u \n", e->TxLateCol);
-        printk("TxExcessiveCol:         %10u \n", e->TxExcessiveCol);
-        printk("TxFrameInDisc:          %10u \n", 0);
-        printk("TxPausePkts:            %10u \n", e->TxPausePkts);
-        printk("TxQoSOctetsLo:          %10u \n", e->TxOctetsLo);
-        printk("TxQoSOctetsHi:          %10u \n", 0);
-    }
-
-    /* Display Rx statistics */
-    printk("\n");
-    printk("RxUnicastPkts:          %10u \n", e->RxUnicastPkts);
-    printk("RxMulticastPkts:        %10u \n", e->RxMulticastPkts);
-    printk("RxBroadcastPkts:        %10u \n", e->RxBroadcastPkts);
-    printk("RxDropPkts:             %10u \n", (e->RxPkts - e->RxGoodPkts));
-
-    /* Display remaining rx stats only if requested */
-    if (type) {
-        printk("RxJabbers:              %10u \n", e->RxJabbers);
-        printk("RxAlignErrs:            %10u \n", e->RxAlignErrs);
-        printk("RxFCSErrs:              %10u \n", e->RxFCSErrs);
-        printk("RxFragments:            %10u \n", e->RxFragments);
-        printk("RxOversizePkts:         %10u \n", e->RxOversizePkts);
-        printk("RxExcessSizeDisc:       %10u \n", e->RxExcessSizeDisc);
-        printk("RxOctetsLo:             %10u \n", e->RxOctetsLo);
-        printk("RxOctetsHi:             %10u \n", 0);
-        printk("RxUndersizePkts:        %10u \n", e->RxUndersizePkts);
-        printk("RxPausePkts:            %10u \n", e->RxPausePkts);
-        printk("RxGoodOctetsLo:         %10u \n", e->RxOctetsLo);
-        printk("RxGoodOctetsHi:         %10u \n", 0);
-        printk("RxSAChanges:            %10u \n", 0);
-        printk("RxSymbolError:          %10u \n", e->RxSymbolError);
-        printk("RxQoSPkts:              %10u \n", e->RxGoodPkts);
-        printk("RxQoSOctetsLo:          %10u \n", e->RxOctetsLo);
-        printk("RxQoSOctetsHi:          %10u \n", 0);
-        printk("RxPkts64Octets:         %10u \n", e->Pkts64Octets);
-        printk("RxPkts65to127Octets:    %10u \n", e->Pkts65to127Octets);
-        printk("RxPkts128to255Octets:   %10u \n", e->Pkts128to255Octets);
-        printk("RxPkts256to511Octets:   %10u \n", e->Pkts256to511Octets);
-        printk("RxPkts512to1023Octets:  %10u \n", e->Pkts512to1023Octets);
-        printk("RxPkts1024to1522Octets: %10u \n", 
-            (e->Pkts1024to1518Octets + e->Pkts1519to1522));
-        printk("RxPkts1523to2047:       %10u \n", e->Pkts1523to2047);
-        printk("RxPkts2048to4095:       %10u \n", e->Pkts2048to4095);
-        printk("RxPkts4096to8191:       %10u \n", e->Pkts4096to8191);
-        printk("RxPkts8192to9728:       %10u \n", 0);
-    }
-    return 0;
-}
-
-
 /* Resets the GMAC MIB Regs */
 void gmac_reset_mib( void )
 {
@@ -537,10 +271,6 @@ static int gmac_drv_ioctl(struct inode *inode, struct file *filep,
             {
                 switch (gmac_p->op)
                 {
-                    case GMACCTL_OP_DUMP:
-                        gmac_dump_mib(gmac_p->mib);
-                        break;
-
                     default:
                         printk(
                             "Invalid op[%u]", gmac_p->op );
@@ -800,7 +530,6 @@ void gmac_exit(void)
 
 EXPORT_SYMBOL( gmac_set_active );
 EXPORT_SYMBOL( gmac_hw_stats );
-EXPORT_SYMBOL( gmac_dump_mib );
 EXPORT_SYMBOL( gmac_reset_mib );
 EXPORT_SYMBOL( gmac_init );
 
