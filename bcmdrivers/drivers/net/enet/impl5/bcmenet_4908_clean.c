@@ -110,10 +110,6 @@ typedef struct BcmEnet_devctrl BcmEnet_devctrl;
 #define ASSERT(x)       if (x); else ERROR(("assert: "__FILE__" line %d\n", __LINE__)); 
 #endif
 
-#ifdef CONFIG_BLOG
-extern int bcm_tcp_v4_recv(pNBuff_t pNBuff, struct net_device *dev);
-#endif
-
 static int __init bcmenet_module_init(void);
 
 static int bcm63xx_enet_open(struct net_device * dev);
@@ -384,13 +380,11 @@ typedef struct EnetXmitParams {
     uint16 port_id; 
     uint8 * data; 
     BcmEnet_devctrl *pDevPriv; 
-    uint32_t blog_chnl, blog_phy;       /* used if CONFIG_BLOG enabled */
     pNBuff_t pNBuff; 
     uint32 dqm;
     DmaDesc dmaDesc;
     BcmPktDma_EthTxDma *txdma;
     int channel;
-    /* FkBuff_t *pFkb; */
     struct sk_buff *skb;
     uint32 reclaim_idx;
     uintptr_t delayed_reclaim_array[DELAYED_RECLAIM_ARRAY_LEN];
@@ -514,17 +508,6 @@ static int bcm63xx_enet_xmit(pNBuff_t pNBuff, struct net_device *dev)
     {
         pParam->skb = PNBUFF_2_SKBUFF(pParam->pNBuff);
     }
-
-#ifdef CONFIG_BLOG
-    param.blog_chnl = param.port_id;
-    param.blog_phy  = BLOG_ENETPHY;
-
-    /*
-     * Pass to blog->fcache, so it can construct the customized
-     * fcache based execution stack.
-     */
-    blog_emit( pNBuff, dev, TYPE_ETH, param.blog_chnl, param.blog_phy ); /* CONFIG_BLOG */
-#endif
 
     bcmeapi_buf_reclaim(pParam);
 
@@ -860,16 +843,12 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
     uint32 rxpktgood = 0, rxpktprocessed = 0;
     uint32 rxpktmax = budget + (budget / 2);
     FkBuff_t * pFkb = NULL;
-    uint32_t blog_chnl, blog_phy; /* used if CONFIG_BLOG enabled */
     uint32 rxContext1 = 0; /* Dummy variable used to hold the value returned from called function -
                               MUST not be changed from caller */
     int is_wifi_port = 0;
     int rxQueue;
     int gemid = 0;
-#if defined(CONFIG_BLOG)
-    BlogAction_t blogAction;
-    struct net_device *txdev = NULL;
-#endif
+
     /* bulk blog locking optimization only used in SMP builds */
 
     // TBD -- this can be looked into but is not being done for now
@@ -885,9 +864,6 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
 
         /* as optimization on SMP, hold blog lock across multiple pkts */
         /* must grab blog_lock before enet_rx_lock */
-#if defined(CONFIG_BLOG)
-        blog_lock();
-#endif
         ENET_RX_LOCK();
 
         ret = bcmeapi_rx_pkt(pDevCtrl, &pBuf, &pFkb, &len, &gemid, &phy_port_id, &is_wifi_port, &dev, &rxpktgood, &rxContext1, &rxQueue);
@@ -896,9 +872,6 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
         if(ret)
         {
             /* bcmeapi_rx_pkt MUST have released the lock upon error */
-#if defined(CONFIG_BLOG)
-            blog_unlock();
-#endif
             continue;
         }
 
@@ -924,55 +897,10 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
             pFkb->recycle_context = context;
         }
 
-
-#ifdef CONFIG_BLOG
-        blog_chnl = phy_port_id;/* blog rx channel is switch port */
-        blog_phy = BLOG_ENETPHY;/* blog rx phy type is ethernet */
-
-        /* SMP: bulk rx, bulk blog optimization */
-        blogAction = blog_finit_locked( pFkb, dev, TYPE_ETH, blog_chnl, blog_phy, (void **)&txdev);
-
-        if ( blogAction == PKT_DROP )
-        {
-            ENET_RX_UNLOCK();
-            blog_unlock();
-
-            bcmeapi_blog_drop(pDevCtrl, pFkb, pBuf);
-
-            /* Store dropped packet count in our portion of the device structure */
-            pDevCtrl->stats.rx_dropped++;
-            continue;
-        }
-        else
-        {
-            bcmeapi_buf_alloc(pDevCtrl);
-        }
-
-        /* packet consumed, proceed to next packet*/
-        if ( blogAction == PKT_DONE )
-        {
-            ENET_RX_UNLOCK();
-            blog_unlock();
-            continue;
-        }
-        else if ( blogAction == PKT_TCP4_LOCAL)
-        {
-            ENET_RX_UNLOCK();
-            blog_unlock();
-           
-            bcm_tcp_v4_recv((void*)CAST_REAL_TO_VIRT_PNBUFF(pFkb,FKBUFF_PTR) , txdev);
-            continue;
-        }
-
-#endif /* CONFIG_BLOG */
-
         /*allocate skb & initialize it using fkb */
 
         if (bcmeapi_alloc_skb(pDevCtrl, &skb)) {
             ENET_RX_UNLOCK();
-#if defined(CONFIG_BLOG)
-            blog_unlock();
-#endif
             fkb_release(pFkb);
             pDevCtrl->stats.rx_dropped++;
             bcmeapi_kfree_buf_irq(pDevCtrl, pFkb, pBuf);
@@ -986,10 +914,6 @@ static uint32 bcm63xx_rx(void *ptr, uint32 budget)
          * critical variables, so release all locks.
          */
         ENET_RX_UNLOCK();
-
-#if defined(CONFIG_BLOG)
-        blog_unlock();
-#endif
 
         if(bcmeapi_skb_headerinit(len, pDevCtrl, skb, pFkb, pBuf))
         {
@@ -1042,9 +966,6 @@ static int bcm63xx_init_txdma_structures(int channel, BcmEnet_devctrl *pDevCtrl)
 
     txdma = pDevCtrl->txdma;
     txdma->channel = channel;
-
-
-
 
     /* init number of Tx BDs in each tx ring */
     txdma->numTxBds = bcmPktDma_EthGetTxBds( txdma, channel );
