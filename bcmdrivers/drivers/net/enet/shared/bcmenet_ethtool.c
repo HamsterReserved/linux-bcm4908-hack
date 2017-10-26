@@ -37,9 +37,6 @@ written consent.
 #include <linux/ethtool.h>
 #include "bcmnet.h"
 
-
-#if defined(SUPPORT_ETHTOOL)
-
 enum {
     ET_TX_BYTES = 0,
     ET_TX_PACKETS,
@@ -163,6 +160,3 @@ static void bcm63xx_get_ethtool_stats(struct net_device *dev, struct ethtool_sta
     data[ET_RX_PACKETS] =   ethStats->rx_packets;
     data[ET_RX_ERRORS] =    ethStats->rx_errors;
 }
-
-#endif // ETHTOOL_SUPPORT
-

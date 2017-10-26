@@ -94,6 +94,8 @@ typedef struct BcmEnet_devctrl BcmEnet_devctrl;
 #include <bcm/bcmswapitypes.h>
 #include "bcmmii.h"
 
+#include "bcmenet_ethtool.h"
+
 #define TRACE printk
 #define BCM_ENET_TX_DEBUG printk
 #define BCM_ENET_RX_DEBUG printk
@@ -427,7 +429,7 @@ static inline void bcmeapi_xmit_unlock_drop_exit_post(EnetXmitParams *pXmitParam
 Name: bcm63xx_enet_xmit
 Purpose: Send ethernet traffic
 -------------------------------------------------------------------------- */
-static int bcm63xx_enet_xmit(struct sk_buff *pNBuff, struct net_device *dev)
+static int bcm63xx_enet_xmit(struct sk_buff *skb, struct net_device *dev)
 {
     EnetXmitParams param, *pParam;
 
@@ -436,16 +438,9 @@ static int bcm63xx_enet_xmit(struct sk_buff *pNBuff, struct net_device *dev)
 
     //printk("bcm63xx_enet_xmit called\n");
     param.pDevPriv = netdev_priv(dev);
-    param.port_id  = 0;
+	param.port_id  = 0;
 
-    if (nbuff_get_params_ext(pNBuff, &param.data, &param.len,
-                &param.mark, &param.priority, &param.r_flags) == NULL)
-    {
-        pVnetDev0_g->stats.tx_dropped++;
-        return 0;
-    }
-
-    pParam->skb = pNBuff;
+    pParam->skb = pParam->pNBuff = skb;
 
     bcmeapi_buf_reclaim(pParam);
 
@@ -458,7 +453,7 @@ static int bcm63xx_enet_xmit(struct sk_buff *pNBuff, struct net_device *dev)
 
     if ( pParam->len < ETH_ZLEN )
     {
-        skb_pad(pParam->pNBuff, ETH_ZLEN - pParam->len);
+        skb_pad(pParam->skb, ETH_ZLEN - pParam->len);
         pParam->len = ETH_ZLEN;
     }
 
@@ -474,7 +469,6 @@ unlock_drop_exit:
     pVnetDev0_g->stats.tx_dropped++;
     bcmeapi_xmit_unlock_drop_exit_post(pParam);
     return 0;
-
 }
 
 static inline void bcmeapi_napi_post(BcmEnet_devctrl *pDevCtrl)
@@ -946,6 +940,7 @@ static int bcm63xx_alloc_txdma_bds(int channel, BcmEnet_devctrl *pDevCtrl)
 
    return 0;
 }
+
 static void setup_txdma_channel(int channel)
 {
     DmaStateRam *StateRam;
@@ -1224,6 +1219,8 @@ static int bcm63xx_init_dev(BcmEnet_devctrl *pDevCtrl)
 
     bcmenet_in_init_dev = 1;
 
+	arch_setup_dma_ops(&pDevCtrl->dev->dev, 0, 0, NULL, 1);
+
     pDevCtrl->dmaCtrl = (DmaRegs *)(GMAC_DMA_BASE);
 
     /* Initialize the Tx DMA software structures */
@@ -1485,9 +1482,7 @@ int __init bcm63xx_enet_probe(void)
     //ethsw_add_proc_files(dev);
 
     dev->netdev_ops = &bcm96xx_netdev_ops;
-#if defined(SUPPORT_ETHTOOL)
     dev->ethtool_ops = &bcm63xx_enet_ethtool_ops;
-#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 1)
     /*
