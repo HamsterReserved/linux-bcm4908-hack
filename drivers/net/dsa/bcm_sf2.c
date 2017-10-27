@@ -66,10 +66,7 @@ static void bcm_sf2_imp_setup(struct dsa_switch *ds, int port)
 	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
 	u32 reg, val, offset;
 
-	if (priv->type == BCM7445_DEVICE_ID)
-		offset = CORE_STS_OVERRIDE_IMP;
-	else
-		offset = CORE_STS_OVERRIDE_IMP2;
+	offset = CORE_STS_OVERRIDE_IMP;
 
 	/* Enable the port memories */
 	reg = core_readl(priv, CORE_MEM_PSM_VDD_CTRL);
@@ -598,10 +595,7 @@ static void bcm_sf2_sw_adjust_link(struct dsa_switch *ds, int port,
 	const char *str = NULL;
 	u32 reg, offset;
 
-	if (priv->type == BCM7445_DEVICE_ID)
-		offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
-	else
-		offset = CORE_STS_OVERRIDE_GMIIP2_PORT(port);
+	offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
 
 	switch (phydev->interface) {
 	case PHY_INTERFACE_MODE_RGMII:
@@ -685,10 +679,7 @@ static void bcm_sf2_sw_fixed_link_update(struct dsa_switch *ds, int port,
 	u32 duplex, pause, offset;
 	u32 reg;
 
-	if (priv->type == BCM7445_DEVICE_ID)
-		offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
-	else
-		offset = CORE_STS_OVERRIDE_GMIIP2_PORT(port);
+	offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
 
 	duplex = core_readl(priv, CORE_DUPSTS);
 	pause = core_readl(priv, CORE_PAUSESTS);
@@ -1039,7 +1030,7 @@ static const u16 bcm_sf2_7278_reg_offsets[] = {
 
 static const struct bcm_sf2_of_data bcm_sf2_7278_data = {
 	.type		= BCM7278_DEVICE_ID,
-	.core_reg_align	= 1,
+	.core_reg_align	= 0,
 	.reg_offsets	= bcm_sf2_7278_reg_offsets,
 };
 
