@@ -49,9 +49,11 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/in.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/init.h>
+#include <linux/of.h>
 #include <asm/io.h>
 #include <linux/errno.h>
 #include <linux/delay.h>
@@ -112,7 +114,7 @@ typedef struct BcmEnet_devctrl BcmEnet_devctrl;
 #define ASSERT(x)       if (x); else ERROR(("assert: "__FILE__" line %d\n", __LINE__)); 
 #endif
 
-static int __init bcmenet_module_init(void);
+static int bcmenet_module_init(void);
 
 static int bcm63xx_enet_open(struct net_device * dev);
 static int bcm63xx_enet_close(struct net_device * dev);
@@ -1423,11 +1425,31 @@ static int bcm63xx_enet_poll_timer(void * arg)
     return 0;
 }
 
+static int bcmenet_skbcache_init(void)
+{
+    TRACE(("bcm63xxenet: bcmenet_skbcache_init\n"));
+
+    /* create a slab cache for device descriptors */
+    enetSkbCache = kmem_cache_create("bcm_EnetSkbCache",
+            BCM_SKB_ALIGNED_SIZE,
+            0, /* align */
+            SLAB_HWCACHE_ALIGN, /* flags */
+            NULL); /* ctor */
+    if(enetSkbCache == NULL)
+    {
+        printk(KERN_NOTICE "Eth: Unable to create skb cache\n");
+
+        return -ENOMEM;
+    }
+
+    return 0;
+}
+
 static int poll_pid = -1;
 /*
  *      bcm63xx_enet_probe: - Probe Ethernet switch and allocate device
  */
-int __init bcm63xx_enet_probe(void)
+int bcm63xx_enet_probe(struct platform_device *pdev)
 {
     static int probed = 0;
     struct net_device *dev = NULL;
@@ -1444,6 +1466,8 @@ int __init bcm63xx_enet_probe(void)
         return -ENXIO;
     }
     probed++;
+
+    bcmenet_skbcache_init();
 
     dev = alloc_etherdev(sizeof(*pDevCtrl));
     if (dev == NULL)
@@ -1503,6 +1527,7 @@ int __init bcm63xx_enet_probe(void)
     //dev->priv_flags         = IFF_HW_SWITCH;
     dev->mtu = BCM_ENET_DEFAULT_MTU_SIZE; /* bcmsw dev : Explicitly assign the MTU size based on buffer size allocated */
 
+    SET_NETDEV_DEV(dev, &pdev->dev);
 
     status = register_netdev(dev);
 
@@ -1536,9 +1561,7 @@ int __init bcm63xx_enet_probe(void)
 static void __exit bcmenet_module_cleanup(void)
 {
     TRACE(("bcm63xxenet: bcmenet_module_cleanup\n"));
-
 }
-
 
 void display_software_stats(BcmEnet_devctrl * pDevCtrl)
 {
@@ -1701,29 +1724,6 @@ PORTMAPIOCTL:   /* Common fall through code to return inteface name string based
     return 0;
 }
 
-static int __init bcmenet_module_init(void)
-{
-    int status;
-
-    TRACE(("bcm63xxenet: bcmenet_module_init\n"));
-
-    /* create a slab cache for device descriptors */
-    enetSkbCache = kmem_cache_create("bcm_EnetSkbCache",
-            BCM_SKB_ALIGNED_SIZE,
-            0, /* align */
-            SLAB_HWCACHE_ALIGN, /* flags */
-            NULL); /* ctor */
-    if(enetSkbCache == NULL)
-    {
-        printk(KERN_NOTICE "Eth: Unable to create skb cache\n");
-
-        return -ENOMEM;
-    }
-
-    status = bcm63xx_enet_probe();
-
-    return status;
-}
 void ethsw_get_txrx_imp_port_pkts(unsigned int *tx, unsigned int *rx)
 {
     *tx = 0;
@@ -1733,7 +1733,20 @@ void ethsw_get_txrx_imp_port_pkts(unsigned int *tx, unsigned int *rx)
 }
 EXPORT_SYMBOL(ethsw_get_txrx_imp_port_pkts);
 
-module_init(bcmenet_module_init);
-module_exit(bcmenet_module_cleanup);
+static const struct of_device_id bcmenet_4908_clean_of_match[] = {
+	{ .compatible = "bcm,bcmenet-4908-clean"},
+	{ /* sentinel */ },
+};
+MODULE_DEVICE_TABLE(of, bcmenet_4908_clean_of_match);
+
+static struct platform_driver bcmenet_4908_clean_driver = {
+	.probe	= bcm63xx_enet_probe,
+	.driver = {
+		.name = "bcmenet_4908_clean",
+		.of_match_table = bcmenet_4908_clean_of_match,
+	},
+};
+module_platform_driver(bcmenet_4908_clean_driver);
+
 MODULE_LICENSE("GPL");
 
