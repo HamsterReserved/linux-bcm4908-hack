@@ -244,9 +244,9 @@
 		};
 
 		gmac: ethernet@80002000 {
-			compatible = "brcm,unimac";
-			reg = <0x80002000 0x1000>;
-			phy-mode = "rgmii";
+			compatible = "bcm,bcmenet-4908-clean";
+			/* Fake prop */
+			phy-mode = "gmii";
 
 			fixed-link {
 				speed = <1000>;
@@ -267,24 +267,26 @@
 				#size-cells = <1>;
 				#address-cells = <0>;
 
+				/* #define BCM94908_PHY_BASE 0x8 */
+
 				phy_port1: phy@0 {
-					reg = <0>;
+					reg = <8>;
 				};
 
 				phy_port2: phy@1 {
-					reg = <1>;
+					reg = <9>;
 				};
 
 				phy_port3: phy@2 {
-					reg = <2>;
+					reg = <10>;
 				};
 
 				phy_port4: phy@3 {
-					reg = <3>;
+					reg = <11>;
 				};
 
 				phy_port5: phy@4 {
-					reg = <4>;
+					reg = <12>;
 				};
 			};
 
@@ -312,13 +314,13 @@
 					#size-cells = <0>;
 
 					port@0 {
-						label = "wan";
+						label = "lan4";
 						reg = <0>;
 						phy-handle = <&phy_port1>;
 					};
 
 					port@1 {
-						label = "lan1";
+						label = "lan3";
 						reg = <1>;
 						phy-handle = <&phy_port2>;
 					};
@@ -330,22 +332,23 @@
 					};
 
 					port@3 {
-						label = "lan3";
+						label = "lan1";
 						reg = <3>;
 						phy-handle = <&phy_port4>;
 					};
 
 					port@4 {
-						label = "lan4";
+						label = "wan";
 						reg = <4>;
 						phy-handle = <&phy_port5>;
 					};
 
-					port@5 {
+					port@1e {
 						label = "cpu";
-						reg = <5>;
+						reg = <0x1e>;
+
 						ethernet = <&gmac>;
-						phy-mode = "rgmii";
+						phy-mode = "gmii";
 
 						fixed-link {
 							speed = <1000>;
