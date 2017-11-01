@@ -3,16 +3,13 @@
  */
 
 #include <linux/mm.h>
-#include <linux/sysinfo.h>
 
 unsigned long getMemorySize(void)
 {
-    struct sysinfo i;
-    static unsigned long memsize = -1;
+    static unsigned long memsize = ~0;
 
-    if (memsize <0 ) {
-        si_meminfo(&i);
-        memsize = i.totalram;
+    if (memsize == ~0) {
+        memsize = get_num_physpages() << PAGE_SHIFT;
     }
 
     return memsize;
