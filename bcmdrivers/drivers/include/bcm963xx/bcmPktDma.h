@@ -1174,18 +1174,9 @@ static inline void bcmPktDma_EthXmitNoCheck_Iudma(BcmPktDma_LocalEthTxDma *txdma
 
     txIndex = txdma->txTailIndex;
 
-
     {
         BcmPktDma_txRecycle_t *txRecycle_p = &txdma->txRecycle[txIndex];
         txRecycle_p->key = key;
-#if defined(CONFIG_BCM_FAP) || defined(CONFIG_BCM_FAP_MODULE)
-        txRecycle_p->source = bufSource;
-        txRecycle_p->address = (uint32)pBuf;
-        txRecycle_p->rxChannel = param1;
-#if defined(ENABLE_BCMPKTDMA_IUDMA_ERROR_CHECKING)
-        BCM_PKTDMA_TX_DEBUG("Tx BD: rxChannel: 0%d \n", param1);
-#endif
-#endif
     }
 
     /* Decrement total BD count */
@@ -1217,23 +1208,13 @@ static inline void bcmPktDma_EthXmitNoCheck_Iudma(BcmPktDma_LocalEthTxDma *txdma
         dmaDesc.length = len;
         dmaDesc.status = dmaStatus;
 
-#if defined(CONFIG_BCM960333) && !defined(MEMCPY_UNALIGNED_WORKAROUND)
-        /* BCM960333 workaround: If the buffer is unaligned, set TS bit in the
-         * descriptor. This workaround is temporary and shouldn't be needed
-         * for B0.
-         */
-        if (param2)
-        {
-            dmaDesc.status |= DMA_DESC_TS;
-        }
-#endif
-
         txBd = &txdma->txBds[txIndex];
         txBd->address = (uint32)VIRT_TO_PHYS(pBuf);
         txBd->word0 = dmaDesc.word0;
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64) 
         wmb();
 #endif /* ARM */
+        printk("DMA Mapped OK\n");
 #if defined(ENABLE_BCMPKTDMA_IUDMA_ERROR_CHECKING)
         BCM_PKTDMA_TX_DEBUG("bdIdx: %d bdAddr: 0x%08x\n", txIndex, (int)txBd);
         BCM_PKTDMA_TX_DEBUG("key: 0x%08x\n", (int)key);
@@ -1246,9 +1227,11 @@ static inline void bcmPktDma_EthXmitNoCheck_Iudma(BcmPktDma_LocalEthTxDma *txdma
     }
 
     /* Enable DMA for this channel */
-    if(txdma->txEnabled)
+    if(txdma->txEnabled) {
         /* Do not reenable if Host MIPs has shut the interface down */
         txdma->txDma->cfg = DMA_ENABLE;
+        printk("DMA Enabled\n");
+    }
 
     FAP4KE_IUDMA_PMON_END(FAP4KE_PMON_ID_IUDMA_XMIT);
 }

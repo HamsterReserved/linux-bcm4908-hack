@@ -40,6 +40,7 @@ written consent.
 
 #define _BCMENET_LOCAL_
 
+#include <linux/delay.h>
 #include <linux/types.h>
 #include <linux/bcm_log_mod.h>
 #include <bcm_map_part.h>
@@ -48,6 +49,7 @@ written consent.
 #include "bcmgmacctl.h"
 #include "bcmgmac_4908.h"
 #include "bcmmii.h"
+#include "mii_shared.h"
 
 /*----- Globals -----*/
 #undef GMAC_DECL
@@ -105,17 +107,6 @@ extern spinlock_t blog_lock_g;
 int gmac_set_active( void )
 {
     BLOG_LOCK_BH();
-    /* Now select GMAC at PHY3 */
-#if defined(CONFIG_BCM963268)
-    /* Disable ROBO RX */
-    //enet_set_port_ctrl( GMAC_PORT_ID, 1 );
-
-    printk("Select GMAC at Mux (set bit18=0x40000)\n" ); 
-    GPIO->RoboswGphyCtrl |= GPHY_MUX_SEL_GMAC;
-
-    printk("\tGPIORoboswGphyCtrl<0x%p>=0x%x\n", 
-        &GPIO->RoboswGphyCtrl, (uint32_t) GPIO->RoboswGphyCtrl );
-#endif
 
     /* Enable GMAC Tx and Rx */
     printk("Enable GMAC Rx & Tx (set bitMask 0x03)\n" ); 
@@ -130,7 +121,7 @@ int gmac_set_active( void )
 }
 
 /* Reads the stats from GMAC Regs */
-void gmac_hw_stats( struct net_device_stats *stats)
+void gmac_hw_stats(struct net_device_stats *stats)
 {
     volatile GmacMIBRegs *e = (volatile GmacMIBRegs *)GMAC_MIB;
 
@@ -375,39 +366,11 @@ static void gmac_drv_destruct(void)
     printk( " GMAC Char Driver Unregistered\n");
 }
 
-#if defined(CONFIG_BCM963268)
-static void gmac_init_63268( void )
-{
-    /* Set bits [14:12] to 0xD to achieve 1G over iuDMA */
-    GPIO->RoboswSwitchCtrl = 
-        (GPIO->RoboswSwitchCtrl & ~RSW_IUDMA_CLK_FREQ_MASK) |
-        (3<<RSW_IUDMA_CLK_FREQ_SHIFT);
-
-    printk(
-        "Set bits[14:12]=0x3 RSW IUDMA CLK Freq<0x%p> = 0x%x\n", 
-        &GPIO->RoboswSwitchCtrl, (unsigned int) GPIO->RoboswSwitchCtrl );
-
-    /* Enable GMAC clock */
-    PERF->blkEnables |= GMAC_CLK_EN;
-
-    printk(
-        "Enable GMAC clock (bit19=0x80000) blkEnables<0x%p>=0x%x\n", 
-        &PERF->blkEnables, (unsigned int) PERF->blkEnables );
-
-    MISC->miscIddqCtrl &= ~MISC_IDDQ_CTRL_GMAC;
-
-    printk(
-        "Cleared IDDQ bit (0x40000) miscIddqCtrl<0x%p> = 0x%x\n", 
-        &MISC->miscIddqCtrl, (unsigned int) MISC->miscIddqCtrl );
-}
-#endif
-
-#if defined(CONFIG_BCM94908)
 static void gmac_init_default(void)
 {
     /* Reset GMAC */
     GMAC_MAC->Cmd.sw_reset = 1;
-    //usleep(20);
+    udelay(20);
     GMAC_MAC->Cmd.sw_reset = 0;
    
     GMAC_INTF->Flush.txfifo_flush = 1;
@@ -433,64 +396,6 @@ static void gmac_init_default(void)
 
     return;
 }
-#endif /* 4908 */
-#if defined(CONFIG_BCM963268)
-void gmac_init_default( void )
-{
-    /* Reset GMAC */
-    printk(
-        "Toggling Cmd to SW Reset (clear bitMask=0x2000)\n" );
-    GMAC_MAC->Cmd.sw_reset = 1;
-    GMAC_MAC->Cmd.sw_reset = 0;
-
-    printk(
-        "\tCmd<0x%p>=0x%x\n", 
-        &GMAC_MAC->Cmd.word, (int) GMAC_MAC->Cmd.word ); 
-
-    printk(
-        "Toggling MacSwReset (clear bitMask=0x07)\n" );
-    GMAC_INTF->MacSwReset.txfifo_flush = 1;
-    GMAC_INTF->MacSwReset.rxfifo_flush = 1;
-    GMAC_INTF->MacSwReset.mac_sw_reset = 1;
-
-    GMAC_INTF->MacSwReset.txfifo_flush = 0;
-    GMAC_INTF->MacSwReset.rxfifo_flush = 0;
-    GMAC_INTF->MacSwReset.mac_sw_reset = 0;
-
-    printk(
-        "\tMacSwReset<0x%p>=0x%x\n", 
-        &GMAC_INTF->MacSwReset.word, (uint32_t) GMAC_INTF->MacSwReset.word );
-
-    gmac_reset_mib();
-
-    /* default CMD configuration */
-    GMAC_MAC->Cmd.runt_filt_dis = 0;
-    GMAC_MAC->Cmd.txrx_en_cfg = 0;
-    GMAC_MAC->Cmd.tx_pause_ign = 0;
-    GMAC_MAC->Cmd.rmt_loop_ena = 0;
-    GMAC_MAC->Cmd.len_chk_dis = 1;
-    GMAC_MAC->Cmd.ctrl_frm_ena = 0;
-    GMAC_MAC->Cmd.ena_ext_cfg = 0;
-    GMAC_MAC->Cmd.lcl_loop_ena = 0;
-    GMAC_MAC->Cmd.hd_ena = 0;
-    GMAC_MAC->Cmd.tx_addr_ins = 0;
-    GMAC_MAC->Cmd.rx_pause_ign = 0;
-    GMAC_MAC->Cmd.pause_fwd = 1;
-    GMAC_MAC->Cmd.crc_fwd = 1;
-    GMAC_MAC->Cmd.pad_rem_en = 0;
-    GMAC_MAC->Cmd.promis_en = 1;
-    GMAC_MAC->Cmd.eth_speed = CMD_ETH_SPEED_1000;
-
-    /* Disable Tx and Rx */
-    printk(
-        "Disable Rx & Tx (set bitMask 0x00)\n" ); 
-    GMAC_MAC->Cmd.tx_ena = 0;
-    GMAC_MAC->Cmd.rx_ena = 0;
-
-    printk("\tCmd<0x%p>=0x%x\n", 
-        &GMAC_MAC->Cmd.word, (uint32_t) GMAC_MAC->Cmd.word ); 
-}
-#endif /* 63268 */
 
 int gmac_init( void )
 {
@@ -498,13 +403,6 @@ int gmac_init( void )
         return GMAC_ERROR;
     printk(
         "============ GMAC Init Begins ============\n" ); 
-
-#if defined(CONFIG_BCM963268)
-    gmac_init_63268();
-#elif defined(CONFIG_BCM94908)
-#else
-#error "ERROR - GMAC driver not supported for this chip"
-#endif 
 
     gmac_init_default();
 
@@ -526,7 +424,6 @@ void gmac_exit(void)
     gmac_drv_destruct();
     printk( GMAC_MODNAME " Driver " GMAC_VER_STR " Uninitialized\n" ); 
 }
-
 
 EXPORT_SYMBOL( gmac_set_active );
 EXPORT_SYMBOL( gmac_hw_stats );
