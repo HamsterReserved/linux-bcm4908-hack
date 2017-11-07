@@ -130,7 +130,7 @@ int kerSysGetSdramSize( void )
 
 int kerSysGetMacAddress(unsigned char *pucaMacAddr, unsigned long ulId)
 {
-    static unsigned char macaddr[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static unsigned char macaddr[] = {0x9c, 0x4d, 0x31, 0x00, 0x00, 0x01};
     memcpy(pucaMacAddr, macaddr, sizeof(macaddr));
     return 0;
 }
