@@ -134,7 +134,6 @@ void bcm_ethsw_phy_write_reg(int phy_id, int reg, uint16 data)
     return;
 }
 
-#if defined(_BCM963138_) || defined(CONFIG_BCM963138) || defined(_BCM963148_) || defined(CONFIG_BCM963148) || defined(_BCM94908_) || defined(CONFIG_BCM94908)
 /* EGPHY28 phy misc and expansion register indirect access function. Hard coded MII register
 number, define them in bcmmii.h. Should consider move the bcmmii.h to shared folder as well */
 uint16 bcm_ethsw_phy_read_exp_reg(int phy_id, int reg)
@@ -179,7 +178,6 @@ void bcm_ethsw_phy_write_misc_reg(int phy_id, int reg, int chn, uint16 data)
     
     return;
 }
-#endif
 
 static void bcm_ethsw_pmdio_read_reg(int page, int reg, uint8 *data, int len)
 {
@@ -341,31 +339,21 @@ static void bcm_ethsw_set_led(void)
        apply to all 5 internal GPHY */
     for( i = 0; i < 5; i++ )
     {
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
         ledctrl = &ETHSW_REG->led_ctrl[i].led_encoding;
-#else
-        ledctrl = &ETHSW_REG->led_ctrl[i];
-#endif
         bcm_ethsw_set_led_reg(ledctrl);
     }
 
     /* WAN led */
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
     ledctrl = &ETHSW_REG->led_wan_ctrl.led_encoding;
-#else
-    ledctrl = &ETHSW_REG->led_wan_ctrl;
-#endif
     bcm_ethsw_set_led_reg(ledctrl);
 
     /* aggregate LED setting */
     if (BpGetAggregateLnkLedGpio(&lnkLed) == BP_SUCCESS ||
         BpGetAggregateActLedGpio(&actLed) == BP_SUCCESS ) 
     {
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
         /* link led polarity is reversed from hw.  Suppose to be active low but it is active high.
            change the polarity in led ctrl registr and also enable all 5 GPHY ports */ 
         ETHSW_REG->aggregate_led_ctrl |= (ETHSW_AGGREGATE_LED_CTRL_LNK_POL_SEL_MASK|0xf); 
-#endif
     }
 
     return;
@@ -406,93 +394,6 @@ static void phy_advertise_caps(unsigned int phy_id)
     bcm_ethsw_phy_write_reg(phy_id, MII_K1CTL, cap_mask);
 }
 
-#if defined(_BCM963138_) || defined(CONFIG_BCM963138)
-static void phy_adjust_afe(unsigned int phy_id_base, int is_quad)
-{
-    unsigned int phy_id;
-    unsigned int phy_id_end = is_quad ? (phy_id_base + 4) : (phy_id_base + 1);
-
-    for( phy_id = phy_id_base; phy_id < phy_id_end; phy_id++ )
-    {
-        //reset phy
-        bcm_ethsw_phy_write_reg(phy_id, 0x0, 0x9140);
-        udelay(100);
-
-        //AFE_RXCONFIG_1 Provide more margin for INL/DNL measurement on ATE  
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x38, 0x1, 0x9b2f);
-        //AFE_TX_CONFIG Set 100BT Cfeed=011 to improve rise/fall time
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x39, 0x0, 0x0431);
-        //AFE_VDAC_ICTRL_0 Set Iq=1101 instead of 0111 for improving AB symmetry 
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x39, 0x1, 0xa7da);
-        //AFE_HPF_TRIM_OTHERS Set 100Tx/10BT to -4.5% swing & Set rCal offset for HT=0 code
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x3a, 0x0, 0x00e3);
-    }
-
-    //CORE_BASE1E Force trim overwrite and set I_ext trim to 0000
-    bcm_ethsw_phy_write_reg(phy_id_base, 0x1e, 0x10);
-    for( phy_id = phy_id_base; phy_id < phy_id_end; phy_id++ )
-    {
-        //Adjust bias current trim by +4% swing, +2 tick 'DSP_TAP10
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0xa, 0x0, 0x011b);
-    }
-
-    //Reset R_CAL/RC_CAL Engine 'CORE_EXPB0
-    bcm_ethsw_phy_write_exp_reg(phy_id_base, 0xb0, 0x10);
-    //Disable Reset R_CAL/RC_CAL Engine 'CORE_EXPB0
-    bcm_ethsw_phy_write_exp_reg(phy_id_base, 0xb0, 0x0);
-
-    return;
-}
-
-#endif
-
-#if defined(_BCM963148_) || defined(CONFIG_BCM963148)
-static void phy_adjust_afe(unsigned int phy_id_base, int is_quad)
-{
-    unsigned int phy_id;
-    unsigned int phy_id_end = is_quad ? (phy_id_base + 4) : (phy_id_base + 1);
-
-    for( phy_id = phy_id_base; phy_id < phy_id_end; phy_id++ )
-    {
-        //reset phy
-        bcm_ethsw_phy_write_reg(phy_id, 0x0, 0x9140);
-        udelay(100);
-        //Write analog control registers
-        //AFE_RXCONFIG_0
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x38, 0x0, 0xeb15);
-        //AFE_RXCONFIG_1. Replacing the previously suggested 0x9AAF for SS part. See JIRA HW63148-31
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x38, 0x1, 0x9b2f);
-        //AFE_RXCONFIG_2
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x38, 0x2, 0x2003);
-        //AFE_RX_LP_COUNTER
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x38, 0x3, 0x7fc0);
-        //AFE_TX_CONFIG
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x39, 0x0, 0x0060);
-        //AFE_VDAC_ICTRL_0
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x39, 0x1, 0xa7da);
-        //AFE_VDAC_OTHERS_0
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x39, 0x3, 0xa020);
-        //AFE_HPF_TRIM_OTHERS
-        bcm_ethsw_phy_write_misc_reg(phy_id, 0x3a, 0x0, 0x00e3);
-    }
-
-    //CORE_BASE1E Force trim overwrite and set I_ext trim to 0000
-    bcm_ethsw_phy_write_reg(phy_id_base, 0x1e, 0x0010);
-    for( phy_id = phy_id_base; phy_id < phy_id_end; phy_id++ )
-    {
-       //Adjust bias current trim by +4% swing, +2 tick, increase PLL BW in GPHY link start up training 'DSP_TAP10
-       bcm_ethsw_phy_write_misc_reg(phy_id, 0xa, 0x0, 0x111b);
-    }
-
-    //Reset R_CAL/RC_CAL Engine 'CORE_EXPB0
-    bcm_ethsw_phy_write_exp_reg(phy_id_base, 0xb0, 0x10);
-    //Disable Reset R_CAL/RC_CAL Engine 'CORE_EXPB0
-    bcm_ethsw_phy_write_exp_reg(phy_id_base, 0xb0, 0x0);
-}
-
-#endif
-
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
 static void phy_adjust_afe(unsigned int phy_id_base, int is_quad)
 {
     unsigned int phy_id;
@@ -528,7 +429,6 @@ static void phy_adjust_afe(unsigned int phy_id_base, int is_quad)
 
     return;
 }
-#endif
 
 static void phy_fixup(void)
 {
@@ -733,10 +633,7 @@ void bcm_ethsw_init(void)
     phy_ctrl = ETHSW_REG->qphy_ctrl;
     phy_ctrl &= ~(ETHSW_QPHY_CTRL_IDDQ_BIAS_MASK|ETHSW_QPHY_CTRL_EXT_PWR_DOWN_MASK|ETHSW_QPHY_CTRL_PHYAD_BASE_MASK);
     phy_ctrl |= ETHSW_QPHY_CTRL_RESET_MASK|(phy_base<<ETHSW_QPHY_CTRL_PHYAD_BASE_SHIFT);
-
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
     phy_ctrl &= ~(ETHSW_QPHY_CTRL_IDDQ_GLOBAL_PWR_MASK);
-#endif
 
     ETHSW_REG->qphy_ctrl = phy_ctrl;
 
@@ -744,9 +641,7 @@ void bcm_ethsw_init(void)
     phy_ctrl &= ~(ETHSW_SPHY_CTRL_IDDQ_BIAS_MASK| ETHSW_SPHY_CTRL_EXT_PWR_DOWN_MASK|ETHSW_SPHY_CTRL_PHYAD_MASK);
     phy_ctrl |= ETHSW_SPHY_CTRL_RESET_MASK|((phy_base+4)<<ETHSW_SPHY_CTRL_PHYAD_SHIFT);
 
-#if defined(_BCM94908_) || defined(CONFIG_BCM94908)
     phy_ctrl &= ~(ETHSW_SPHY_CTRL_IDDQ_GLOBAL_PWR_MASK);
-#endif
 
     ETHSW_REG->sphy_ctrl = phy_ctrl;
 
@@ -821,8 +716,6 @@ void bcm_ethsw_init(void)
     return;
 }
 
-#if defined(_BCM94908_)
-
 /* In 4908 GMAC/UNIMAC is attached to the SF2 using MAC to MAC connection as IMP port. There is no
    PHY block. Sneak in some simple GMAC init routine in the driver file. 
    TODO: Move to seperate file for sharing with linux driver */
@@ -875,7 +768,6 @@ static void gmac_enable_port(int enable)
 
     return;
 }
-#endif
 
 /* SF2 switch init for CFE networking */
 /* Only Called by CFE Command Line */
@@ -902,10 +794,8 @@ void bcm_ethsw_open(void)
                 (~(PORT_CTRL_RXTX_DISABLE|PORT_CTRL_PORT_STATUS_M))) | PORT_CTRL_NO_STP;
     }
 
-#if defined(_BCM94908_)
     gmac_init();
     gmac_enable_port(1);
-#endif
     return;
 }
 
@@ -913,9 +803,7 @@ void bcm_ethsw_open(void)
 void bcm_ethsw_close(void)
 {
     printk("Restore Switch's MAC port Rx/Tx, PBVLAN back.\n");
-#if defined(_BCM94908_)
     gmac_enable_port(0);
-#endif
     extsw_register_save_restore(0);
 }
 
